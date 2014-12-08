@@ -1,0 +1,408 @@
+<!doctype html>
+
+<html>
+
+    <head>
+        <title>Migros Urun Arama</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+        <meta content="" name="description"/>
+        <meta content="" name="author"/>
+        <meta name="MobileOptimized" content="320">
+
+        <!-- BEGIN GLOBAL MANDATORY STYLES -->
+        <link href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700&subset=all" rel="stylesheet" type="text/css"/>
+        <link href="/assets/global/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
+        <link href="/assets/global/plugins/simple-line-icons/simple-line-icons.min.css" rel="stylesheet" type="text/css"/>
+        <link href="/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+        <link href="/assets/global/plugins/uniform/css/uniform.default.css" rel="stylesheet" type="text/css"/>
+        <link href="/assets/global/plugins/bootstrap-switch/css/bootstrap-switch.min.css" rel="stylesheet" type="text/css"/>
+        <!-- END GLOBAL MANDATORY STYLES -->
+        <!-- BEGIN PAGE LEVEL STYLES -->
+        <link rel="stylesheet" type="text/css" href="/assets/global/plugins/bootstrap-datepicker/css/datepicker.css"/>
+        <link href="/assets/admin/pages/css/search.css" rel="stylesheet" type="text/css"/>
+        <!-- END PAGE LEVEL STYLES -->
+        <!-- BEGIN THEME STYLES -->
+        <link href="/assets/global/css/components.css" rel="stylesheet" type="text/css"/>
+        <link href="/assets/global/css/plugins.css" rel="stylesheet" type="text/css"/>
+        <link href="/assets/admin/layout/css/layout.css" rel="stylesheet" type="text/css"/>
+        <link id="style_color" href="/assets/admin/layout/css/themes/default.css" rel="stylesheet" type="text/css"/>
+        <link href="/assets/admin/layout/css/custom.css" rel="stylesheet" type="text/css"/>
+        <!-- END THEME STYLES -->
+        <link rel="shortcut icon" href="favicon.ico"/>
+
+        <!-- BEGIN JAVASCRIPTS(Load javascripts at bottom, this will reduce page load time) -->
+        <!-- BEGIN CORE PLUGINS -->
+        <!--[if lt IE 9]>
+        <script src="/assets/global/plugins/respond.min.js"></script>
+        <script src="/assets/global/plugins/excanvas.min.js"></script> 
+        <![endif]-->
+        <script src="/assets/global/plugins/jquery-1.11.0.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/jquery-migrate-1.2.1.min.js" type="text/javascript"></script>
+        <!-- IMPORTANT! Load jquery-ui-1.10.3.custom.min.js before bootstrap.min.js to fix bootstrap tooltip conflict with jquery ui tooltip -->
+        <script src="/assets/global/plugins/jquery-ui/jquery-ui-1.10.3.custom.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/bootstrap-hover-dropdown/bootstrap-hover-dropdown.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/jquery-slimscroll/jquery.slimscroll.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/jquery.blockui.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/jquery.cokie.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/uniform/jquery.uniform.min.js" type="text/javascript"></script>
+        <script src="/assets/global/plugins/bootstrap-switch/js/bootstrap-switch.min.js" type="text/javascript"></script>
+        <!-- END CORE PLUGINS -->
+        <script type="text/javascript" src="/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+        <script src="/assets/global/plugins/fancybox/source/jquery.fancybox.pack.js"></script>
+        <script src="/assets/global/scripts/metronic.js" type="text/javascript"></script>
+        <script src="/assets/admin/layout/scripts/layout.js" type="text/javascript"></script>
+        <script src="/assets/admin/layout/scripts/quick-sidebar.js" type="text/javascript"></script>
+        <script src="/assets/admin/layout/scripts/demo.js" type="text/javascript"></script>
+        <script src="/assets/admin/pages/scripts/search.js"></script>
+        <script>
+            jQuery(document).ready(function () {
+                Metronic.init(); // init metronic core components
+                Layout.init(); // init current layout
+                QuickSidebar.init(); // init quick sidebar
+                Demo.init(); // init demo features
+                Search.init();
+            });
+        </script>
+        <!-- END JAVASCRIPTS -->
+
+
+
+        <script>
+            $(document).ready(function () {
+                $("#arabutton").click(function () {
+                    if ($("#q").val() == '') {
+                        return false;
+                    }
+                    $("#promotion").attr("value", $("#promotion").prop("checked"));
+                    $("#totalsold").attr("value", $("#totalsold").prop("checked"));
+                    $("#query-form").submit();
+                });
+                $("#query-form").submit(function () {
+                    if ($("#q").val() == '') {
+                        return false;
+                    }
+
+                    $("#promotion").attr("value", $("#promotion").prop("checked"));
+                    $("#totalsold").attr("value", $("#totalsold").prop("checked"));
+                    $("this").submit();
+                });
+                $("ul a").click(function (event) {
+                    if ($("#q").val() == '') {
+                        return false;
+                    }
+                    var url = $(this).attr('href');
+                    var si = $("#startindex").attr("value");
+                    var ei = $("#endindex").attr("value");
+
+                    url = url + "&startindex=" + si + "&endindex=" + ei;
+                    $(this).attr('href', url);
+                    //window.location = url;
+
+                });
+
+            });
+        </script>
+
+        <style>
+            .coblue {
+                color: blue;
+            }
+            .cogreen {
+                color: green;
+            }
+            body {
+                background-color: #FAFAFA !important;
+            }
+            .cmargin{
+                margin-left:30px;
+                margin-right:30px;
+            }
+            .search-classic{
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="page-container">
+
+            <div class="row search-form-default" style="margin-top: 20px">
+                <form class="form-inline" id="query-form" method="GET" action="/arabul">
+                    <div class="col-md-2 text-center">
+                        <a href="/">
+                            <img src="http://summitw.com/wp-content/NewYalafarLogosu.jpg" height="52" width="57">
+                        </a>
+                    </div>
+                    <div class="col-md-10">
+
+                        <div class="input-group">
+                            <div class="input-cont">
+                                <input class="form-control" type="text" id="q" name="q" value="{{queryString|safe}}"/>
+                                <input type="hidden" id="startindex" name="startindex" value="{{startindex}}">
+                                <input type="hidden" id="endindex" name="endindex" value="{{endindex}}">
+                            </div>
+                            <span class="input-group-btn">
+                                <button id="arabutton" type="button" class="btn green">
+                                    Ara &nbsp; <i class="m-icon-swapright m-icon-white"></i>
+                                </button>
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <!-- new components -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Customer ID</label>
+                            <input type="text" class="form-control input-sm" placeholder="Enter Customer ID"  id="customerid" name="customerid">
+                        </div>
+                    </div>
+                     
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="control-label">Enter Store ID: </label>
+                            <select class="form-control input-small select2me" data-placeholder="Select Store ID" name="storeid" id="storeid">
+                                <option value="1005">1005</option>
+                                <option value="1006">1006</option>
+                                <option value="1325">1325</option>
+                                <option value="1405">1405</option>
+                                <option value="1445">1445</option>
+                                <option value="1467">1467</option>
+                                <option value="1468">1468</option>
+                                <option value="1505">1505</option>
+                                <option value="1566">1566</option>
+                                <option value="1567">1567</option>
+                                <option value="1645">1645</option>
+                                <option value="1685">1685</option>
+                                <option value="1707">1707</option>
+                                <option value="1725">1725</option>
+                                <option value="1745">1745</option>
+                                <option value="1746">1746</option>
+                                <option value="175">175</option>
+                                <option value="1765">1765</option>
+                                <option value="177">177</option>
+                                <option value="178">178</option>
+                                <option value="179">179</option>
+                                <option value="1805">1805</option>
+                                <option value="1806">1806</option>
+                                <option value="182">182</option>
+                                <option value="183">183</option>
+                                <option value="184">184</option>
+                                <option value="1846">1846</option>
+                                <option value="185">185</option>
+                                <option value="1865">1865</option>
+                                <option value="1866">1866</option>
+                                <option value="1885">1885</option>
+                                <option value="189">189</option>
+                                <option value="190">190</option>
+                                <option value="1905">1905</option>
+                                <option value="1925">1925</option>
+                                <option value="193">193</option>
+                                <option value="194">194</option>
+                                <option value="1965">1965</option>
+                                <option value="2006">2006</option>
+                                <option value="2045">2045</option>
+                                <option value="2065">2065</option>
+                                <option value="2085">2085</option>
+                                <option value="2106">2106</option>
+                                <option value="2114">2114</option>
+                                <option value="2115">2115</option>
+                                <option value="2116">2116</option>
+                                <option value="2145">2145</option>
+                                <option value="2165">2165</option>
+                                <option value="2166">2166</option>
+                                <option value="2185">2185</option>
+                                <option value="2205">2205</option>
+                                <option value="2226">2226</option>
+                                <option value="2245">2245</option>
+                                <option value="2265">2265</option>
+                                <option value="2287">2287</option>
+                                <option value="2305">2305</option>
+                                <option value="2365">2365</option>
+                                <option value="2366">2366</option>
+                                <option value="237">237</option>
+                                <option value="2386">2386</option>
+                                <option value="2390">2390</option>
+                                <option value="2405">2405</option>
+                                <option value="2426">2426</option>
+                                <option value="2445">2445</option>
+                                <option value="2446">2446</option>
+                                <option value="2465">2465</option>
+                                <option value="2466">2466</option>
+                                <option value="2467">2467</option>
+                                <option value="2505">2505</option>
+                                <option value="2525">2525</option>
+                                <option value="2545">2545</option>
+                                <option value="2566">2566</option>
+                                <option value="2567">2567</option>
+                                <option value="2585">2585</option>
+                                <option value="2586">2586</option>
+                                <option value="2605">2605</option>
+                                <option value="2625">2625</option>
+                                <option value="2627">2627</option>
+                                <option value="2667">2667</option>
+                                <option value="304">304</option>
+                                <option value="324">324</option>
+                                <option value="325">325</option>
+                                <option value="63">63</option>
+                                <option value="645">645</option>
+                                <option value="766">766</option>
+                                <option value="767">767</option>
+                                <option value="905">905</option>
+                                <option value="925">925</option>
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="control-label">Discount Searching Level: </label>
+                            <select class="form-control input-small select2me" data-placeholder="Select Discount Level" name="discountlevel" id="discountlevel">
+                                <option value="1">High</option>
+                                <option value="2">Medium</option>
+                                <option value="3">Low</option>
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="control-label">Enter Customer Segment ID : </label>
+                            <select class="form-control input-small select2me" data-placeholder="Select Store ID"  name="custsegmentid" id="custsegmentid">
+                                <option value="101" >101</option>
+                                <option value="102">102</option>
+                                <option value="103">103</option>
+                                <option value="104">104</option>
+                                <option value="105">105</option>
+                                <option value="106">106</option>
+                                <option value="107">107</option>
+                                <option value="108">108</option>
+                                <option value="109">109</option>
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <!-- new components -->
+
+
+                </form>
+            </div>
+
+            <br/><br/>
+            <div class="row search-form-default">
+                <div class="col-md-2">
+                </div>
+                <div class="col-md-10">
+                    <h5>{{numFound}} adet sonuc {{qtime}} milisaniyede bulundu: customerid={{customerid|safe}}, storeid={{storeid|safe}},
+                        custsegmentid={{custsegmentid|safe}}, discountlevel={{discountlevel|safe}} </h5>
+                </div>
+            </div>
+            <br/>
+
+            <div class="row search-form-default">
+                <div class="col-md-2">
+                </div>
+
+                <div class="col-md-8" >
+                    {% for record in records %}
+                    <div class="search-classic">
+
+                        <h4>ProductID:<span class="coblue">{{ record.ProductID|safe }}</span> </h4>
+                        ProductModelID:<p >{{ record.ProductModelID|safe }}</p>
+                        ProductModelName:<p><span class="cogreen">{{ record.ProductModelName|safe }}</span></p>
+                        ShopCode:<p >{{ record.ShopCode|safe }}</p>
+                        ShopID:<p >{{ record.ShopID|safe }}</p>
+                        PromotionType<p >{{ record.PromotionType|safe }}</p>
+                        TotalSold:<p >{{ record.TotalSold|safe }}</p>
+                        ProductFeatures<p>
+                            {% for feature in record.ProductFeatures %}
+                            {{ feature|safe }},
+                            {% endfor %}
+                        </p>
+                        StoreID:<p>
+                            {% for storeid in record.StoreID %}
+                            {{ storeid|safe }},
+                            {% endfor %}
+                        </p>
+
+                        CustomerID:<p>Customer IDs
+                        </p>
+                        <!--
+                        CustomerID:<p>
+                        {% for customerid in record.CustomerID %}
+                            {{ customerid|safe }},
+                        {% endfor %}
+                        </p>
+                        -->
+
+                        IsPromotion:<p>
+                            {% for prom in record.IsPromotion %}
+                            {{ prom|safe }},
+                            {% endfor %}
+                        </p>
+
+                        CategoryPath:<p>
+                            {% for cat in record.CategoryPath %}
+                            {{ cat|safe }},
+                            {% endfor %}
+                        </p>
+
+                        ProductPrice: Product Prices
+                        <!--
+                        ProductPrice:<p>
+                        {% for price in record.ProductPrice %}
+                            {{ price|safe }},
+                        {% endfor %}
+                        </p>
+                        -->
+
+                        CategoryID:<p >{{ record.CategoryID|safe }}</p>
+                        ProductMoreDetail:<p >{{ record.ProductMoreDetail|safe }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-2">
+                </div>
+            </div>
+
+            <div class="row search-form-default">
+                <div class="col-md-2">
+                </div>
+                <div class="col-md-8" >
+                    <div class="margin-top-20">
+                        <ul class="bootpag pagination pagination-sm">
+                            {% if !prevurl %}
+                            <li data-lp="1" class="prev disabled"><a href="javascript:void(0);"><i class="fa fa-angle-left"></i></a></li>
+                            {% else %}
+                            <li data-lp="1" class="prev"><a href="{{prevurl}}"><i class="fa fa-angle-left"></i></a></li>
+                            {% endif %}
+                            {% for loop  in pageindexes %}
+                            {% if loop.index == currentindex %}
+                            <li data-lp="{{ loop.index  }}" class="disabled"><a href="javascript:void(0);">{{ loop.index }}</a></li>
+                            {% else %}
+                            <li data-lp="{{ loop.index  }}"><a href="{{ loop.url|safe }}">{{ loop.index  }}</a></li>
+                            {% endif %}
+                            {% endfor %}
+                            {% if !nexturl %}
+                            <li data-lp="7" class="next disabled"><a href="javascript:void(0);"><i class="fa fa-angle-right"></i></a></li>
+                            {% else %}
+                            <li data-lp="7" class="next"><a href="{{ nexturl|safe }}"><i class="fa fa-angle-right"></i></a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                </div>
+            </div>
+
+    </body>
+
+</html>
+
+
+
