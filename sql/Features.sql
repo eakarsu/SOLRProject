@@ -1,0 +1,1 @@
+select * from PRODUCT_MODEL_FEATURES

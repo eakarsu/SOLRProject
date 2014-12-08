@@ -1,0 +1,6 @@
+SELECT pmp.product_model_id,
+  props.PROPERTY_NAME,
+  props.TYPE "PROPERTY_TYPE"
+FROM PROPERTIES props,
+  PRODUCT_MODEL_PROPERTIES pmp
+WHERE props.PROPERTY_ID = pmp.PROPERTY_ID

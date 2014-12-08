@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!--
+   This is an example of a simple "solr.xml" file for configuring one or 
+   more Solr Cores, as well as allowing Cores to be added, removed, and 
+   reloaded via HTTP requests.
+
+   More information about options available in this configuration file, 
+   and Solr Core administration can be found online:
+   http://wiki.apache.org/solr/CoreAdmin
+-->
+<solr persistent="false">
+
+  <!--
+  adminPath: RequestHandler path to manage cores.
+    If 'null' (or absent), cores will not be manageable via request handler
+  -->
+  <cores adminPath="/admin/cores"  hostContext="${hostContext:solr}">
+<!--
+  <cores adminPath="/admin/cores" host="${host:}" hostPort="${jetty.port:8983}" hostContext="${hostContext:solr}">
+-->
+
+    <core name="Products" instanceDir="Products" >
+	<property name="solr.data.dir" value="/opt/migros/data/Products" />
+    </core>
+
+ <core name="Mixed" instanceDir="Mixed" >
+	<property name="solr.data.dir" value="/opt/migros/data/Mixed" />
+    </core>
+
+<!--
+    <core name="Sales" instanceDir="Sales" >
+	<property name="solr.data.dir" value="/opt/migros/data/Sales" />
+    </core>
+    <core name="Campaigns" instanceDir="Campaigns" >
+	<property name="solr.data.dir" value="/opt/migros/data/Campaigns" />
+    </core>
+-->
+
+    <core name="collection1" instanceDir="collection1" >
+	<property name="solr.data.dir" value="/opt/migros/data/collection1" />
+    </core>
+
+    <core name="ProductsTRMorphTest" instanceDir="ProductsTRMorphTest" >
+	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphTest" />
+    </core>
+
+    <core name="ProductsTRMorphTestIst" instanceDir="ProductsTRMorphTestIst" >
+	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphTestIst" />
+    </core>
+
+    <core name="ProductsTRMorphFullProduction" instanceDir="ProductsTRMorphFullProduction" >
+	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphFullProduction" />
+    </core>
+    <core name="ProductsTRMorphFullProductionSuggest" instanceDir="ProductsTRMorphFullProductionSuggest" >
+	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphFullProductionSuggest" />
+    </core>
+<!--
+    <core name="ProductsTRMorphProd" instanceDir="ProductsTRMorphProd" >
+	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphProd" />
+    </core>
+
+
+    <core name="ProductsTRMorph.backup4" instanceDir="ProductsTRMorph.backup4" >
+	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorph.backup4" />
+    </core>
+-->
+   
+    <shardHandlerFactory name="shardHandlerFactory" class="HttpShardHandlerFactory">
+      <str name="urlScheme">${urlScheme:}</str>
+    </shardHandlerFactory>
+    <core name="solrpedia" instanceDir="solrpedia" >
+	<property name="solr.data.dir" value="/opt/migros/data/solrpedia" />
+    </core>
+  </cores>
+
+</solr>
+

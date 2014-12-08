@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Context docBase="/opt/migros/solr/solr.war" debug="0" crossContext="true">
+<!--
+  <Environment name="solr/home" type="java.lang.String" value="/opt/migros/solr" override="true"/>
+  <Environment name="data/dir" type="java.lang.String" value="/opt/migros/data" override="true"/>
+-->
+</Context>
+
