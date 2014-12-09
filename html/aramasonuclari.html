@@ -64,32 +64,36 @@
                 Demo.init(); // init demo features
                 Search.init();
             });
+
         </script>
         <!-- END JAVASCRIPTS -->
 
-        <!-- this is test  update -->
+
 
         <script>
             $(document).ready(function () {
+                document.getElementById('storeid').value='{{storeid|safe}}';
+                document.getElementById('customerid').value='{{customerid|safe}}';
+                document.getElementById('custsegmentid').value='{{custsegmentid|safe}}';
+                document.getElementById('discountlevel').value='{{discountlevel|safe}}';
+                
                 $("#arabutton").click(function () {
                     if ($("#q").val() == '') {
                         return false;
                     }
-                    $("#promotion").attr("value", $("#promotion").prop("checked"));
-                    $("#totalsold").attr("value", $("#totalsold").prop("checked"));
+
                     $("#query-form").submit();
                 });
                 $("#query-form").submit(function () {
                     if ($("#q").val() == '') {
                         return false;
                     }
-
-                    $("#promotion").attr("value", $("#promotion").prop("checked"));
-                    $("#totalsold").attr("value", $("#totalsold").prop("checked"));
+                    
                     $("this").submit();
                 });
                 $("ul a").click(function (event) {
-                    if ($("#q").val() == '') {
+                    
+                    if ($("#q").val() === '') {
                         return false;
                     }
                     var url = $(this).attr('href');
@@ -101,6 +105,17 @@
                     //window.location = url;
 
                 });
+                   
+                $("#q").keypress(function (e) {            
+                    if (e.keyCode === 13) {
+                        if ($("#q").val() === '') {
+                               return false;
+                        }
+                        $("#query-form").submit();
+                    }
+                });
+                
+               
 
             });
         </script>
@@ -153,16 +168,16 @@
                     </div>
 
                     <!-- new components -->
-                    <div class="col-md-2">
+                     <div class="col-md-2">
                         <div class="form-group">
-                            <label>Customer ID</label>
-                            <input type="text" class="form-control input-sm" placeholder="Enter Customer ID"  id="customerid" name="customerid">
+                            <label>Müşteri Numarası</label>
+                            <input type="text" class="form-control input-sm" placeholder="Müşteri Numarası"  name="customerid" id="customerid" name="customerid">
                         </div>
                     </div>
-                     
+
                     <div class="col-md-2">
                         <div class="form-group">
-                            <label class="control-label">Enter Store ID: </label>
+                            <label class="control-label">Mağaza: </label>
                             <select class="form-control input-small select2me" data-placeholder="Select Store ID" name="storeid" id="storeid">
                                 <option value="1005">1005</option>
                                 <option value="1006">1006</option>
@@ -259,7 +274,7 @@
 
                     <div class="col-md-2">
                         <div class="form-group">
-                            <label class="control-label">Discount Searching Level: </label>
+                            <label class="control-label">Kampanya Duyarlılık Seviyesi: </label>
                             <select class="form-control input-small select2me" data-placeholder="Select Discount Level" name="discountlevel" id="discountlevel">
                                 <option value="1">High</option>
                                 <option value="2">Medium</option>
@@ -271,9 +286,9 @@
 
                     <div class="col-md-2">
                         <div class="form-group">
-                            <label class="control-label">Enter Customer Segment ID : </label>
-                            <select class="form-control input-small select2me" data-placeholder="Select Store ID"  name="custsegmentid" id="custsegmentid">
-                                <option value="101" >101</option>
+                            <label class="control-label">Müşteri Grubu : </label>
+                            <select class="form-control input-small select2me" data-placeholder="Select Store ID" name="custsegmentid" id="custsegmentid">
+                                <option value="101">101</option>
                                 <option value="102">102</option>
                                 <option value="103">103</option>
                                 <option value="104">104</option>
@@ -287,88 +302,116 @@
                         </div>
                     </div>
 
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label class="control-label">SOLR Request? : </label>
+                            <input type="checkbox" id="showsolrreq" name="showsolrreq"  class="make-switch" data-size="small">
+                        </div>
+                    </div>
+                    
                     <!-- new components -->
 
 
                 </form>
             </div>
 
-            <br/><br/>
+        
             <div class="row search-form-default">
                 <div class="col-md-2">
                 </div>
                 <div class="col-md-10">
                     <h5>{{numFound}} adet sonuc {{qtime}} milisaniyede bulundu: customerid={{customerid|safe}}, storeid={{storeid|safe}},
                         custsegmentid={{custsegmentid|safe}}, discountlevel={{discountlevel|safe}} </h5>
+                    <h5>{{solrURL|safe}}</h5>
                 </div>
             </div>
-            <br/>
+            
 
-            <div class="row search-form-default">
-                <div class="col-md-2">
-                </div>
+            <div style="margin: 10px;">
+               
+                <div class="table-scrollable" >
+                <table class="table table-striped table-condensed table-hover">
+                <thead>
+                <tr>
+                <th>ProductModelD</th>
+                <th>ProductID</th>
+                <th>BrandName</th>
+                <th>ProductModelName</th>
+                                <th>PathLevel2</th>
 
-                <div class="col-md-8" >
+                                <th>Description</th>
+                                                <th>ProductMoreDetail</th>
+
+
+                
+                <th>SegAmount</th>
+                <th>SegOrderCount</th>
+                <th>NumberOfClicks</th>
+                <th>Amount</th>
+                <th>OrderCount</th>
+                <th>ProductFeatures</th>
+                <th>UnitSymbol</th>
+                <th>UnitVal</th>
+                <th>UnitExpr</th>
+                <th>Price</th>
+                <th>Mcc_Price</th>
+                <th>Action_Price</th>
+                <th>Mcc_Price</th>
+                <th>InPromotion</th>
+                
+                <th>SegAmountGrade</th>
+                <th>SegOrderCountGrade</th>
+                <th>NumberOfClicksGrade</th>
+                <th>AmountGrade</th>
+                <th>OrderCountGrade</th>
+                
+                </tr>
+                </thead>
+                
+                
+                
                     {% for record in records %}
-                    <div class="search-classic">
+                       <tr height="1em">
+                       				<td>{{ record['ProductModelID']|safe }}</td>
+                <td>{{ record['ProductID']|safe }}</td>
+                <td>{{ record['BrandName']|safe }}</td>
+                <td>{{ record['ProductModelName']|safe }}</td>
+                                <td>{{ record['PathLevel2']|safe }}</td>
 
-                        <h4>ProductID:<span class="coblue">{{ record.ProductID|safe }}</span> </h4>
-                        ProductModelID:<p >{{ record.ProductModelID|safe }}</p>
-                        ProductModelName:<p><span class="cogreen">{{ record.ProductModelName|safe }}</span></p>
-                        ShopCode:<p >{{ record.ShopCode|safe }}</p>
-                        ShopID:<p >{{ record.ShopID|safe }}</p>
-                        PromotionType<p >{{ record.PromotionType|safe }}</p>
-                        TotalSold:<p >{{ record.TotalSold|safe }}</p>
-                        ProductFeatures<p>
-                            {% for feature in record.ProductFeatures %}
-                            {{ feature|safe }},
-                            {% endfor %}
-                        </p>
-                        StoreID:<p>
-                            {% for storeid in record.StoreID %}
-                            {{ storeid|safe }},
-                            {% endfor %}
-                        </p>
+                                <td>{{ record['Description']|safe }}</td>
+                                                <td>{{ record['ProductMoreDetail']|safe }}</td>
 
-                        CustomerID:<p>Customer IDs
-                        </p>
-                        <!--
-                        CustomerID:<p>
-                        {% for customerid in record.CustomerID %}
-                            {{ customerid|safe }},
-                        {% endfor %}
-                        </p>
-                        -->
 
-                        IsPromotion:<p>
-                            {% for prom in record.IsPromotion %}
-                            {{ prom|safe }},
-                            {% endfor %}
-                        </p>
-
-                        CategoryPath:<p>
-                            {% for cat in record.CategoryPath %}
-                            {{ cat|safe }},
-                            {% endfor %}
-                        </p>
-
-                        ProductPrice: Product Prices
-                        <!--
-                        ProductPrice:<p>
-                        {% for price in record.ProductPrice %}
-                            {{ price|safe }},
-                        {% endfor %}
-                        </p>
-                        -->
-
-                        CategoryID:<p >{{ record.CategoryID|safe }}</p>
-                        ProductMoreDetail:<p >{{ record.ProductMoreDetail|safe }}</p>
-                    </div>
+               
+                <td>{{ record['SegAmount']|safe }}</td>
+                <td>{{ record['SegOrderCount']|safe }}</td>
+                <td>{{ record['NumberOfClicks']|safe }}</td>
+                <td>{{ record['Amount']|safe }}</td>
+                <td>{{ record['OrderCount']|safe }}</td>
+                <td>{{ record['ProductFeatures']|safe }}</td>
+                <td>{{ record['UnitSymbol']|safe }}</td>
+                <td>{{ record['UnitVal']|safe }}</td>
+                <td>{{ record['UnitExpr']|safe }}</td>
+                <td>{{ record['Price']|safe }}</td>
+                <td>{{ record['Mcc_Price']|safe }}</td>
+                <td>{{ record['Action_Price']|safe }}</td>
+                <td>{{ record['Mcc_Price']|safe }}</td>
+                <td>{{ record['InPromotion']|safe }}</td>
+                
+                 <td>{{ record['SegAmountGrade']|safe }}</td>
+                <td>{{ record['SegOrderCountGrade']|safe }}</td>
+                <td>{{ record['NumberOfClicksGrade']|safe }}</td>
+                <td>{{ record['AmountGrade']|safe }}</td>
+                <td>{{ record['OrderCountGrade']|safe }}</td>
+                
+                       </tr>
+                    
                     {% endfor %}
+                    
+                    </table>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                </div>
-            </div>
+                
 
             <div class="row search-form-default">
                 <div class="col-md-2">
