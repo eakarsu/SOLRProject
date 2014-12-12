@@ -4,6 +4,7 @@ var server = require("./server");
 var path = require('path');
 
 var requestHandlers = require("./requestHandlers");
+var autosuggest = require("./autosuggestHandlers");
 var express = require('express');
 var swig = require('swig');
 
@@ -16,6 +17,10 @@ app.get('/', function(req,res) {
 });
 app.get('/arabul', function(req,res) {
 	requestHandlers.arabul(res,req);
+});
+
+app.get('/autosuggest', function(req,res) {
+	autosuggest.autosuggest(res,req);
 });
 
 //app.configure(function(){

@@ -71,7 +71,7 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
 function autosuggest(presponse, request) {
     console.log("Request handler 'autosuggest' was called for " + request.url);
     var queryData = url.parse(request.url, true).query;
-    var term = queryData.term;
+    var term = encodeURIComponent(queryData.term);
      
     var solrURL = "http://" + host + ":" + port + solrpath+term;
     requestmod(solrURL, function (error, response, body) {

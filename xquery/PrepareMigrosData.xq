@@ -144,6 +144,61 @@ declare function local:getSegmentInfo () as map(*)
   
 };
 
+declare function local:getClicksMap () as map(*)
+{
+    let $clickList :=   
+        for $record in fn:doc("ClickStreamNewAlgorithm")//Clicked
+             let $psis := fn:tokenize($record/clickedPsi/text()," ")
+             let $rl :=
+               for $p in $psis
+                 return
+                   <Clicked>
+                     <clickedPsi>{$p}</clickedPsi>
+                     {$record/*[fn:name() ne "clickedPsi"]}
+                   </Clicked>
+              return $rl
+                   
+      let $mapClicks :=
+      map:new(for $record in $clickList
+                 let $psi := $record/clickedPsi/text()
+                 where $record/IsClicked eq "true"
+                 group by $psi
+                 return map:entry($psi,fn:count($record)))
+                 
+      return $mapClicks
+};
+                                                          
+declare function local:getCRMSegmentMap () as map(*)
+{
+  let $segments := ("Aburcubur","Çay_Kahve","İçecek","Karma_Az","Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik")
+  let $segMap :=
+      map:new(
+        for $record in fn:doc("ProdCRMExport")//record
+          let $pid := $record/PRODUCT_ID 
+          group by $pid
+          return 
+            let $totalAmount := sum($record//AMOUNT/text())
+            let $totalOrderCount := sum($record//ORDER_COUNT)
+            let $sumSolrFields := (<field name="Amount">{$totalAmount}</field>,
+                                 <field name="OrderCount">{$totalOrderCount}</field>)
+            let $solrFields :=
+              for $r in $record
+                let $sid := $r/SON_SEGMENT/text()
+                let $sid := fn:concat("10",fn:index-of($segments,$sid))
+                let $segAmount := $r/AMOUNT/text()
+                let $segOrderCount := $r/ORDER_COUNT/text()
+                let $solrField := (<field name="SegAmount_{$sid}">{$segAmount}</field>,
+                                    <field name="SegOrderCount_{$sid}">{$segOrderCount}</field>)
+                return $solrField
+           return
+             map:entry($pid,($solrFields,$sumSolrFields)
+        )
+    
+        )
+   
+   return $segMap
+};
+
 declare function local:getCustMap () as map(*)
 {
   let $rnd := random:new()
@@ -216,7 +271,7 @@ declare function local:getDeltaVals ($custMap as map(*)) as item()*
   
 
 let $rnd := random:new()
-let $root := "C:/Migros/production/"
+let $root := "C:/tmp/"
 let $text := file:read-text(fn:concat($root,"ProductModelDetails.csv"),"UTF-8") 
 let $options := { 'lax': 'no' }
 let $modelDetails := csv:parse($text, $options) 
@@ -244,12 +299,6 @@ let $mapCustomers :=
                 group by $pid
                 return map:entry($pid,<block>{$cid}</block>))
  
-let $inProductStatistics := local:getCustMap ()
-let $productStatistics := local:enhanceCustMap($inProductStatistics)
-let $array := local:getDeltaVals ($productStatistics)
-let $disAmount := $array[1] 
-let $disOrderCount := $array[2]
-let $disNumberOfClicks := $array[3]
                                        
 (: temporary. get paths from test:)
 let $pathsmap :=
@@ -263,8 +312,8 @@ let $mapMD :=
   map:new(for $record in $modelDetails//record
              return map:entry(($record/entry)[1]/text(), ($record/entry)[2]/text()))
 
-let $segMap := local:getSegmentInfo ()
-           
+let $segMap := local:getCRMSegmentMap ()
+let $clickMap := local:getClicksMap ()
 let $outfile := fn:concat($root,"solrinputIstanbul.xml")
 let $addBegin := file:append-text($outfile,"<add>","UTF-8")
        
@@ -289,10 +338,21 @@ let $prods :=
     let $path := $record/*[fn:name() eq "Path"]/text() 
     let $isMigroskop :=  $record/*[fn:name() eq "IS_MIGROSKOP"]/text()
     let $brandID :=  $record/*[fn:name() eq "BRAND_ID"]/text()
-    
+    let $psiId := $record/*[fn:name() eq "PRODUCT_SALES_INFO_ID"]/text()
+     
     group by $pid
+    let $nclicks := for $r in $psiId 
+                        return map:get($clickMap,$r)
+    let $nclicks := if (fn:empty($nclicks)) then () 
+                    else <field name="NumberOfClicks">{sum($nclicks)}</field> 
+    let $segData := map:get($segMap,$pid)    
+    let $setData := if (fn:empty($segData)) then ()
+                    else $segData
+    
     return file:append($outfile,
       <doc>  
+          {$segData }
+          {$nclicks}
          <field name="IsMigroskop">{$isMigroskop[1]}</field>
          <field name="ProductID">{$pid}</field>
          {$pDetail[1]}
@@ -302,7 +362,7 @@ let $prods :=
          {local:transTurkishChars("ProductModelName",$pmn[1]/text())}
          {$desc[1]}
          {local:transTurkishChars("Description",$desc[1]/text())}
-         { map:get($segMap,$pid) }
+  
          {
           let $utriple := local:splitUnits($pmn[1])
           return
@@ -371,18 +431,7 @@ let $prods :=
            return
             <field name="CustomersPurchased">{$r}</field>
          }
-         { 
-           let $stat := map:get ($productStatistics,$pid[1])
-           return
-            ( 
-                 <field name="NumberOfClicks">{$stat/NumberOfClicks/text()}</field>,
-                 <field name="Amount">{$stat/Amount/text()}</field>,
-                 <field name="OrderCount">{$stat/OrderCount/text()}</field>,
-                 <field name="NumberOfClicksGrade">{fn:ceiling($stat/NumberOfClicks/text() div $disNumberOfClicks)}</field>,
-                 <field name="AmountGrade">{fn:ceiling($stat/Amount/text() div $disAmount)}</field>,
-                 <field name="OrderCountGrade">{fn:ceiling($stat/OrderCount/text() div $disOrderCount)}</field>
-           )  
-         }
+         
           {for $r in map:get($mapFavorites,$pid[1])//PRODUCT_MODEL_ID/text()
            return
             <field name="Favorite">{$r}</field>

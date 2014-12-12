@@ -1,7 +1,7 @@
 let $fn := "c:/tmp/clickstream2.xml"
 let $addBegin := file:append-text($fn,"<RECORDS>","UTF-8")
 
-let $doc := fn:doc("c:/tmp/clickstream.xml")
+let $doc := fn:doc("reformattedClickstream")
 
 let $sessions :=
   for $r in ($doc//record)
@@ -17,7 +17,8 @@ let $sessions :=
                  fn:contains($path,"/kweb/main") or
                  fn:contains($path,"/kweb/getMigroskopDiscountProductList") or
                  fn:contains($path,"/kweb/registration") or
-                 fn:contains($path,"/kweb/getMccDiscountProductList"))
+                 fn:contains($path,"/kweb/getMccDiscountProductList") or
+                  fn:contains($path,"/kweb//qs"))
     group by $cid
     return
       file:append( $fn,  

@@ -13,7 +13,7 @@ var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
 var maxflen = 256;
-var pblock = 10;
+var pblock = 20;
 var resultspage = "../resources/aramasonuclari.html";
 var startpage = "../resources/index.html";
 
@@ -22,8 +22,17 @@ var startpage = "../resources/index.html";
 var host = 'localhost';
 var port = '8080';
 var path = '/migrossolr/ProductsTRMorphTestIst/select?wt=json&indent=true';
+var rankingProcess = require("./rankingProcess");
 
-function setupResults(body) {
+function test ()
+{
+    var list = rankingProcess.flList;
+    for (field in list){
+        console.log ("debug field="+field+" = "+list[field]);
+    }
+};
+
+function setupResults(body,storeid,custsegmentid) {
     var solrdata = JSON.parse(body);
     var docs = solrdata.response.docs;
     var numFound = solrdata.response.numFound;
@@ -31,35 +40,24 @@ function setupResults(body) {
     var highs = solrdata.highlighting;
     var responseHeader = solrdata.responseHeader;
 
-
     var rows = new Array();
+    var flist = rankingProcess.getFL();
+    
     for (j = 0; j < docs.length; j++) {
-        var ProductID = docs[j].ProductID;
-        var ProductModelID = docs[j].ProductModelID;
-        var ProductModelName = docs[j].ProductModelName;
-        var ShopCode = docs[j].ShopCode;
-        var ShopID = docs[j].ShopID;
-        var TotalSold = docs[j].TotalSold;
-	var IsInCampaign = docs[j].IsInCampaign;
-	var CustomerID = docs[j].CustomerID;
-        var StoreID = docs[j].StoreID;
-        var CategoryID = docs[j].CategoryID;
-        var ProductMoreDetail = docs[j].ProductMoreDetail;
-	var PromotionType = docs[j].PromotionType;
-	var CategoryPath = docs[j].CategoryPath;
-	var ProductPrice = docs[j].ProductPrice;
-        var ProductFeatures = docs[j].ProductFeatures;
- 
-        ProductMoreDetail = ProductMoreDetail.replace(/\r\n|\n/g, '');
-       
-        rows[j] = {ProductID: ProductID,ProductModelID: ProductModelID, ProductModelName: ProductModelName,
-            ShopCode: ShopCode, ShopID: ShopID, StoreID: StoreID,
-            CategoryID: CategoryID, ProductMoreDetail: ProductMoreDetail,
-		TotalSold:TotalSold,IsInCampaign:IsInCampaign,CustomerID:CustomerID,
-		PromotionType:PromotionType,CategoryPath:CategoryPath,ProductPrice:ProductPrice,
-                ProductFeatures:ProductFeatures};
-    }  
-    ;
+        rows[j] = {};
+        for (k in flist){
+            var field = flist[k];
+            var newFieldName = field.replace(/SEGMENTID/g,custsegmentid).replace(/STOREID/g,storeid);
+            var fieldVal = docs[j][newFieldName];
+            if (newFieldName === 'ProductMoreDetail'){
+                fieldVal = fieldVal.replace(/\r\n|\n/g, '');
+            }
+            
+            var newFieldName2 = newFieldName.replace(/_[0-9]+/,"");   
+            rows[j][newFieldName2] = fieldVal;
+            //console.log ("received field="+newFieldName+" = "+rows[j][newFieldName2]);
+        }
+    } ;
     return {rows: rows, numFound: numFound, start: start, qtime: responseHeader.QTime};
 }
 
@@ -68,14 +66,8 @@ function setupPagination(start, query, numFound, requesturl) {
     var pages = new Array();
     var startindex = query.startindex, endindex = query.endindex;
      
-    var promotion = query.promotion;
-    var totalsold = query.totalsold;
     var customerid = query.customerid;
     var storeid = query.storeid;
-    console.log ("promotion="+promotion+":"+totalsold+":"+customerid+":"+storeid+":"+query);
-    if (promotion == 'undefined'){
-        console.log ("campaing is not define: OFF");
-    }
     
     var target = start / pblock;
     console.log("incomng counters==" + startindex + ":" + endindex +
@@ -96,20 +88,25 @@ function setupPagination(start, query, numFound, requesturl) {
     var pat = new RegExp(/q=[^&]+&/);
     var queryparam = requesturl.match(pat);
     queryparam = queryparam[0];
-    var partialpath = basepath + queryparam;
+    var partialpath = rankingProcess.prepareBrowseQuery (query);// basepath + queryparam;
 
-    /*
+    /* 
      // replace start=229893 with empty string
      var regex=/start=[0-9]+/;
      var querywostart = requesturl.replace(regex,"");
      console.log ("querywostart="+querywostart);
-     */
+    */
 
+    var startblock = startindex * pblock;
     var endblock = endindex * pblock;
-    if (endblock <= numFound) {
+    console.log("setup indexes if "+endblock +":"+numFound+" startblock="+startblock);
+    
+    var finalIndex = Math.ceil(numFound/pblock);
+    
+    if ((startblock <= numFound && endblock >=numFound) || numFound > endblock) {
         startindex = parseInt(startindex);
         endindex = parseInt(endindex);
-        for (var j = startindex; j <= endindex; j++) {
+        for (var j = startindex; j <= endindex && j<finalIndex; j++) {
             pages[j - startindex] = {index: j, url: (partialpath + "start=" + (j * pblock))};
         }
     }
@@ -135,22 +132,33 @@ function setupPagination(start, query, numFound, requesturl) {
 }
 ;
 
-function buildPage(response, body, query, requesturl) {
-    var results = setupResults(body);
+function buildPage(response, body, query, requesturl,solrURL) {
+    var storeid = query.storeid;
+    var custsegmentid = query.custsegmentid;
+            
+    var results = setupResults(body,storeid,custsegmentid);
     var rows = results.rows;
 
     console.log("buildPage:numFound=" + results.numFound + " start=" + results.start);
-
+ 
     var pgs = setupPagination(results.start, query, results.numFound, requesturl);
 
-    /*var rData = {records:rows,nexturls:false,prevurls:["prevurl1"],pageindexes:[{index:"1",url:"url1"},
-     {index:"2",url:"url2"},{index:"3",url:"url3"}]}; // wrap the data in a global object... (mustache starts from an object then parses)
-     */
+    var solrfields = [];
+    for (f in rankingProcess.flList){
+        solrfields.push(f.replace(/SEGMENTID/g,custsegmentid).replace(/STOREID/g,storeid));
+    }
+    
+    var showsolrreq = query.showsolrreq;
+    var solrURLText = "";
+    if (showsolrreq === "on"){
+        solrURLText = "SOLR Query sent : "+solrURL;
+    }
+    
     var rData = {records: rows, nexturl: pgs.nexturl, prevurl: pgs.prevurl, pageindexes: pgs.pageindexes,
         startindex: pgs.startindex, endindex: pgs.endindex,
         qtime: results.qtime, numFound: results.numFound, queryString: query.q, currentindex: pgs.currentindex,
-        customerid:query.customerid,storeid:query.storeid,custsegmentid:query.custsegmentid,discountlevel:query.discountlevel};
- 
+        customerid:query.customerid,storeid:query.storeid,custsegmentid:query.custsegmentid,discountlevel:query.discountlevel,solrURL:solrURLText};
+  
     /*var page = fs.readFileSync(resultspage, "utf8"); // bring in the HTML file
      var html = mustache.to_html(page, rData); // replace all of the data
      */
@@ -171,17 +179,10 @@ function buildPage(response, body, query, requesturl) {
 function solrdata(presponse, request) {
     console.log("Request handler 'solrdata' was called for " + request.url);
     var queryData = url.parse(request.url, true).query;
-    console.log("url=" + request.url + " q=" + queryData.q + " start=" + queryData.start + " options=" + host +
-            ":" + path+" storeid="+queryData.storeid+" customerid="+queryData.customerid+" custsegmentid="+
-            queryData.custsegmentid+" discountlevel="+queryData.discountlevel);
-
-
-    var lpath = path + "&" + request.url.substring(basepath.length);
-    var lurl = "http://" + host + ":" + port + lpath;
-    console.log("Pulling solr data from " + lurl);
-
-    requestmod(lurl, function (error, response, body) {
-        buildPage(presponse, body, queryData, request.url);
+    
+    var solrURL = rankingProcess.prepareBQOnlySOLRQuery2 (request);
+    requestmod(solrURL, function (error, response, body) {
+        buildPage(presponse, body, queryData, request.url,solrURL);
 
     });
 
@@ -232,4 +233,5 @@ exports.start = start;
 exports.arabul = solrdata;
 exports.solrdata = solrdata;
 exports.css = css;
+exports.test=test;
 
