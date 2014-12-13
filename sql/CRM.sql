@@ -10,12 +10,14 @@ FROM CRM.SPSS_VM_KART_ITEM crm,
   products p,
   customers cs,
   customer_segments csseg,
+  customer_segment_members cssegmems,
   CRM.SPSS_VM_SEGMENT seg
 WHERE TO_CHAR(crm.item_number) = pm.shop_code
 AND crm.MIGROSCARDNUMBER       = seg.MIGROSCARDNUMBER
 AND p.product_model_id         = pm.product_model_id
 AND cs.migros_card_no = TO_CHAR(seg.MIGROSCARDNUMBER)
-AND csseg.customer_id = cs.customer_id
+AND csseg.segment_id = cssegmems.segment_id
+AND cssegmems.customer_id = cs.customer_id
 GROUP BY p.product_id,
   cs.customer_id,
   csseg.segment_id,
