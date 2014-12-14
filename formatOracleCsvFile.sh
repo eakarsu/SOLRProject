@@ -11,10 +11,9 @@ $ more csv2xml.fferc
 structure csv2xml {
     type separated ,
     output xml
-    record data {
+    record record {
         field PRODUCT_ID
                 field CUSTOMER_ID
-                field SON_SEGMENT
                 field CUSTOMER_SEGMENT_NAME
                 field CUSTOMER_SEGMENT_ID
                 field AMOUNT
@@ -23,10 +22,12 @@ structure csv2xml {
 }
 
 output xml {
-    file_header "<?xml version=\"1.0\" encoding=\"OTF-8\"?>\n"
+    file_header "<RECORDS>\n"
     data "<%n>%t</%n>\n"
     record_header "<%r>\n"
     record_trailer "</%r>\n"
     indent " "
+    file_trailer "</RECORDS>\n"
   }
+
 
