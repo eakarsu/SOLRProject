@@ -1,5 +1,7 @@
 cat myFile.csv.notcorrect | sed 's/[ \t]*,[ \t]*/,/g' > FullCRMOutputNew.csv
 
+http://ff-extractor.sourceforge.net/
+
 $ sudo aptitude update
 $ sudo aptitude install ffe
 
