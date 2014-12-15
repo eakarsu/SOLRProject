@@ -382,7 +382,7 @@ function prepareSortExpression2 (localRankOrder,customerid,searchKeyword)
     return result;
 }
 
-function getConstVal (index,myRankLevel,sortedRankOrder,highestRank)
+function getConstVal (index,sortedRankOrder,highestRank)
 {
                 console.log("getConstVal:"+index+":"+highestRank+":"+sortedRankOrder.length);
                 var constVal = "1";
@@ -418,7 +418,7 @@ function prepareExceptionRankingForBF (allSortExprs,sortedRankOrder,sortExpr,sor
                 sortExprTemp =  sortExprTemp+rankVal;
                 allSortExprs.push(sortExprTemp);
             }else if (field.match(/InPromotion/)){
-                var constVal = getConstVal (index,rankLevel,sortedRankOrder,highestRank);
+                var constVal = getConstVal (index,sortedRankOrder,highestRank);
                 
                 var sortExprTemp =  sortExpr2.replace("FIELDNAME",field).replace("CONST",constVal);  
                 sortExprTemp =  sortExprTemp.replace("FIELDVALUE","true");    
@@ -426,7 +426,7 @@ function prepareExceptionRankingForBF (allSortExprs,sortedRankOrder,sortExpr,sor
                 allSortExprs.push(sortExprTemp);
             } 
             else if (field.match(/Customers/) && ((typeof customerid !== 'undefined') && customerid !== "")){
-                var constVal = getConstVal (index,rankLevel,sortedRankOrder,highestRank);
+                var constVal = getConstVal (index,sortedRankOrder,highestRank);
                 var sortExprTemp =  sortExpr2.replace("FIELDNAME",field).replace("CONST",constVal);  
                 sortExprTemp =  sortExprTemp.replace("FIELDVALUE",customerid);     
                 sortExprTemp =  sortExprTemp+rankVal;
