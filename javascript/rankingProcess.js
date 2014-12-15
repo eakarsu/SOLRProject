@@ -132,7 +132,6 @@ function adjustRankOrder (localRankOrder,storeid,custsegmentid,discountPrefLev)
         
         for ( var prop in localRankOrder ) {
             var rankVal = localRankOrder[prop];
-            console.log(" adjustRankOrder looking "+rankVal+ " of "+prop);
             var newPropName = prop;
             if (prop.indexOf("_SEGMENTID") >=0 && ((typeof custsegmentid !== 'undefined') && custsegmentid !== "")){                               
                 newPropName = prop.replace("SEGMENTID",custsegmentid);
@@ -298,6 +297,7 @@ function prepareSortExpression (localRankOrder,customerid,searchKeyword)
     sortExpr2 = sortExpr2.replace(/KEYWORD/g,searchKeyword);
  
     var sortedRankOrder = sortObject(localRankOrder);
+    
     var allSortExprs = [];
     for ( var index in sortedRankOrder ) {
             var field = sortedRankOrder[index].key;
@@ -382,6 +382,25 @@ function prepareSortExpression2 (localRankOrder,customerid,searchKeyword)
     return result;
 }
 
+function getConstVal (index,myRankLevel,sortedRankOrder,highestRank)
+{
+                console.log("getConstVal:"+index+":"+highestRank+":"+sortedRankOrder.length);
+                var constVal = "1";
+                for (var j=parseInt(index)+1;j<sortedRankOrder.length;j++){
+                    console.log("checking :"+j);
+                    var field = sortedRankOrder[j].key;
+                    console.log("checking :"+field);
+                    if (field.match(/Grade/)){
+                        var localRankLevel = sortedRankOrder[j].value;
+                        constVal = Math.pow(4,(highestRank-localRankLevel+1))+4;
+                        console.log("cons:"+constVal);
+                        break;
+                    }
+                }
+                return constVal;
+                
+}
+
 function prepareExceptionRankingForBF (allSortExprs,sortedRankOrder,sortExpr,sortExpr2,customerid)
 {
     var highestRank = sortedRankOrder[sortedRankOrder.length-1].value;
@@ -395,21 +414,20 @@ function prepareExceptionRankingForBF (allSortExprs,sortedRankOrder,sortExpr,sor
             //All numeric values here for all fields ending in "Grade". we need to scale the result to boost correctly
             if (field.match(/Grade/)){ 
                 var newFieldName = "scale("+field.replace("Grade","")+","+rankVal+","+(nextRankVal-4)+")";
-                //var newFieldName = field.replace("Grade","");
                 var sortExprTemp =  sortExpr.replace("FIELDNAME",newFieldName); 
                 sortExprTemp =  sortExprTemp+rankVal;
                 allSortExprs.push(sortExprTemp);
             }else if (field.match(/InPromotion/)){
-                if (rankLevel === 4){
-                    rankVal = rankVal * 10000;
-                }
-                var sortExprTemp =  sortExpr2.replace("FIELDNAME",field);  
+                var constVal = getConstVal (index,rankLevel,sortedRankOrder,highestRank);
+                
+                var sortExprTemp =  sortExpr2.replace("FIELDNAME",field).replace("CONST",constVal);  
                 sortExprTemp =  sortExprTemp.replace("FIELDVALUE","true");    
                 sortExprTemp =  sortExprTemp+rankVal;
                 allSortExprs.push(sortExprTemp);
             } 
             else if (field.match(/Customers/) && ((typeof customerid !== 'undefined') && customerid !== "")){
-                var sortExprTemp =  sortExpr2.replace("FIELDNAME",field);  
+                var constVal = getConstVal (index,rankLevel,sortedRankOrder,highestRank);
+                var sortExprTemp =  sortExpr2.replace("FIELDNAME",field).replace("CONST",constVal);  
                 sortExprTemp =  sortExprTemp.replace("FIELDVALUE",customerid);     
                 sortExprTemp =  sortExprTemp+rankVal;
                 allSortExprs.push(sortExprTemp);
@@ -429,9 +447,9 @@ function prepareBFExpression2 (localRankOrder,customerid,searchKeyword)
     var qq = "{!edismax bf=''}ProductModelName:KEYWORD OR ProductModelName_TR:KEYWORD";
     var exactqq = "{!edismax bf=''}ProductModelNameExact:\"KEYWORD\" OR ProductModelName_TR:\"KEYWORD\"";
     var sortExpr = "map(exists($qq),1,1,FIELDNAME,0)^";
-    var sortExpr2 = "map(and(termfreq(FIELDNAME,FIELDVALUE),exists($qq)),1,1,1,0)^";
+    var sortExpr2 = "product(map(and(termfreq(FIELDNAME,FIELDVALUE),exists($qq)),1,1,1,0),CONST)^";
     var exactSortExpr = "map(exists($exactqq),1,1,FIELDNAME,0)^";
-    var exactSortExpr2 = "map(and(termfreq(FIELDNAME,FIELDVALUE),exists($exactqq)),1,1,1,0)^";
+    var exactSortExpr2 = "product(map(and(termfreq(FIELDNAME,FIELDVALUE),exists($exactqq)),1,1,1,0),CONST)^";
     
     searchKeywordEncoded = encodeURIComponent(searchKeyword);  
     exactqq = exactqq.replace(/KEYWORD/g,searchKeywordEncoded);
@@ -439,6 +457,10 @@ function prepareBFExpression2 (localRankOrder,customerid,searchKeyword)
    
     allSortExprs = [];
     var sortedRankOrder = sortObject(localRankOrder); 
+    
+    for (x in sortedRankOrder){
+        console.log(" sorted: "+sortedRankOrder[x].key+ ":"+sortedRankOrder[x].value);
+    }
     
     prepareExceptionRankingForBF(allSortExprs,sortedRankOrder,exactSortExpr,exactSortExpr2,customerid); 
     prepareExceptionRankingForBF (allSortExprs,sortedRankOrder,sortExpr,sortExpr2,customerid);
