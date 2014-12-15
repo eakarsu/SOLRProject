@@ -17,9 +17,9 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = '192.168.191.139';
+var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsTRMorphFullProduction2/myselect?';
+var solrpath = '/migrossolr/ProductsTRMorphFullProduction3/myselect?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5; 
 var reRankDocs = 5000;
@@ -385,16 +385,24 @@ function prepareSortExpression2 (localRankOrder,customerid,searchKeyword)
 function prepareExceptionRankingForBF (allSortExprs,sortedRankOrder,sortExpr,sortExpr2,customerid)
 {
     var highestRank = sortedRankOrder[sortedRankOrder.length-1].value;
-    
+     
     for ( var index in sortedRankOrder ) {
             var field = sortedRankOrder[index].key;
-            var rankVal = Math.pow(4,(highestRank-sortedRankOrder[index].value));
+            var rankLevel = sortedRankOrder[index].value;
+            var rankVal = Math.pow(4,(highestRank-rankLevel));
+            var nextRankVal = Math.pow(4,(highestRank-rankLevel+1));
+            
+            //All numeric values here for all fields ending in "Grade". we need to scale the result to boost correctly
             if (field.match(/Grade/)){ 
-                var newFieldName = field.replace("Grade","");
+                var newFieldName = "scale("+field.replace("Grade","")+","+rankVal+","+(nextRankVal-4)+")";
+                //var newFieldName = field.replace("Grade","");
                 var sortExprTemp =  sortExpr.replace("FIELDNAME",newFieldName); 
                 sortExprTemp =  sortExprTemp+rankVal;
                 allSortExprs.push(sortExprTemp);
             }else if (field.match(/InPromotion/)){
+                if (rankLevel === 4){
+                    rankVal = rankVal * 10000;
+                }
                 var sortExprTemp =  sortExpr2.replace("FIELDNAME",field);  
                 sortExprTemp =  sortExprTemp.replace("FIELDVALUE","true");    
                 sortExprTemp =  sortExprTemp+rankVal;
@@ -678,7 +686,7 @@ function prepareOnlyBQOnlyQueryExt2 (customerid,storeid,discountPrefLev,custsegm
     var extraOpts = "wt=json&indent=true&stopwords=true&start="+start;
     var solrURL = "q=StoreID:"+storeid+" AND (turkishtext:"+queryKeyword+" OR text:"+queryKeyword+")&"+fl+"&"+sortQuery+"&"+pfqfOnlyQuery+"&"+extraOpts;
     //var solrURL = "q=StoreID:"+storeid+" AND turkishtext:"+queryKeyword+"&"+fl+"&"+pfqfOnlyQuery+"&"+extraOpts;
-    solrURL = solrURL + "&"+faceFields+"&"+hlPars;
+    solrURL = solrURL+"&"+faceFields+"&"+hlPars;
       
     return solrURL;
     
