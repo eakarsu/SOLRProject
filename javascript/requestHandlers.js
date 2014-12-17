@@ -32,7 +32,78 @@ function test ()
     }
 };
 
-function setupResults(body,storeid,custsegmentid) {
+function findFacetingValues (solrdata,query)
+{
+    /*
+    var facetNames=[
+       'IsMCCProduct_STOREID', //Money Club indirimli urunler
+       'UnitSymbol', //Birim
+       'IsMigroskop', //Migroskop urunler
+       'BrandName', //Markalar
+       'PathLevel2', //Reyonlar
+       'CustomersPurchased', //eski siparislerim
+       'CustomersFavourite', //Favoro urunlerim
+       'InPromotion_STOREID' //kampanyali urunler
+   ];
+     */    
+    var facetQueryUrlInit = rankingProcess.prepareBrowseQuery(query);
+    var customerid = query.customerid;
+    var storeid = query.storeid;
+    var facets = {};
+    var facetFieldsData = solrdata.facet_counts.facet_fields;
+    for (var facetName in facetFieldsData){
+        var facetQueryUrl = facetQueryUrlInit;
+        console.log("Facet name:"+facetName);
+         var facetVals = facetFieldsData[facetName];
+         facetName = facetName.replace(/_.*/,"");
+         /**
+            "CustomersPurchased":[ "852708",4],
+            "CustomersFavourite":[],
+         */
+        //Favori urunlerim veya eski siparislerim grubu
+        var facetCount = 0;
+        if (facetName.match(/CustomersFavourite|CustomersPurchased/)){
+            if (facetVals.length === 1 ){
+                facetCount = facetVals[1];
+            }else{
+                facetCount = 0;
+            }
+            facetQueryUrl = facetQueryUrl+ facetName+"="+customerid;
+            facets[facetName] = {facetCount:facetCount,facetQueryUrl:facetQueryUrl};
+        }
+        //kampanyali urunler,migroskop urunleri veya money club indirimli urunler
+        else if (facetName.match(/InPromotion|IsMigroskop|IsMCCProduct/)){
+            facetCount = facetVals[3];
+            if (facetName.match(/IsMigroskop/)){
+                facetQueryUrl = facetQueryUrl+facetName+"=1";
+            }else{
+                facetQueryUrl = facetQueryUrl+facetName+"_"+storeid+"=true";
+            }
+            facets[facetName] = {facetCount:facetCount,facetQueryUrl:facetQueryUrl};
+        }
+        else{
+            var array = [];
+            
+            for (var j=0;j<facetVals.length;j+=2){
+                var facetQueryUrl = facetQueryUrlInit;
+                var facetValue = facetVals[j];
+                var facetCount = facetVals[j+1];
+                var facetQueryUrl = facetQueryUrl+facetName+"=\""+facetValue+"\"";
+                array[j/2] = {facetValue:facetValue,facetCount:facetCount,facetQueryUrl:facetQueryUrl};
+                //take only first 30 elements
+                if (j/2 == 30){
+                    break;
+                }
+                
+            }
+            facets[facetName] = array;
+        }
+    }  
+    return facets;
+} 
+
+function setupResults(body,storeid,custsegmentid,query) {
+        
     var solrdata = JSON.parse(body);
     var docs = solrdata.response.docs;
     var numFound = solrdata.response.numFound;
@@ -42,6 +113,8 @@ function setupResults(body,storeid,custsegmentid) {
 
     var rows = new Array();
     var flist = rankingProcess.getFL();
+    
+    facets = findFacetingValues(solrdata,query);
     
     for (j = 0; j < docs.length; j++) {
         rows[j] = {};
@@ -58,7 +131,7 @@ function setupResults(body,storeid,custsegmentid) {
             //console.log ("received field="+newFieldName+" = "+rows[j][newFieldName2]);
         }
     } ;
-    return {rows: rows, numFound: numFound, start: start, qtime: responseHeader.QTime};
+    return {rows: rows, numFound: numFound, start: start, qtime: responseHeader.QTime,facets:facets};
 }
 
 function setupPagination(start, query, numFound, requesturl) {
@@ -136,7 +209,7 @@ function buildPage(response, body, query, requesturl,solrURL) {
     var storeid = query.storeid;
     var custsegmentid = query.custsegmentid;
             
-    var results = setupResults(body,storeid,custsegmentid);
+    var results = setupResults(body,storeid,custsegmentid,query);
     var rows = results.rows;
 
     console.log("buildPage:numFound=" + results.numFound + " start=" + results.start);
@@ -157,7 +230,8 @@ function buildPage(response, body, query, requesturl,solrURL) {
     var rData = {records: rows, nexturl: pgs.nexturl, prevurl: pgs.prevurl, pageindexes: pgs.pageindexes,
         startindex: pgs.startindex, endindex: pgs.endindex,
         qtime: results.qtime, numFound: results.numFound, queryString: query.q, currentindex: pgs.currentindex,
-        customerid:query.customerid,storeid:query.storeid,custsegmentid:query.custsegmentid,discountlevel:query.discountlevel,solrURL:solrURLText};
+        customerid:query.customerid,storeid:query.storeid,custsegmentid:query.custsegmentid,discountlevel:query.discountlevel,solrURL:solrURLText,
+        facets:pgs.facets};
   
     /*var page = fs.readFileSync(resultspage, "utf8"); // bring in the HTML file
      var html = mustache.to_html(page, rData); // replace all of the data
