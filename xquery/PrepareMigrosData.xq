@@ -170,32 +170,35 @@ declare function local:getClicksMap () as map(*)
                                                           
 declare function local:getCRMSegmentMap () as map(*)
 {
-  let $segments := ("Aburcubur","Çay_Kahve","İçecek","Karma_Az","Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik")
-  let $segMap :=
-      map:new(
-        for $record in fn:doc("ProdCRMExport")//record
-          let $pid := $record/PRODUCT_ID 
+   let $segMap :=
+    map:new(
+        for $prodGroup in (fn:doc("FullCRMDataFormatted")//record)[fn:position() > 1]
+          let $pid := $prodGroup/PRODUCT_ID 
           group by $pid
           return 
-            let $totalAmount := sum($record//AMOUNT/text())
-            let $totalOrderCount := sum($record//ORDER_COUNT)
+            let $totalAmount := sum($prodGroup//AMOUNT/text())
+            let $totalOrderCount := sum($prodGroup//ORDER_COUNT)
+            let $customers := 
+              for $cid in $prodGroup/CUSTOMER_ID/text()
+                return 
+                  <field name="CustomersPurchased">{$cid}</field>
             let $sumSolrFields := (<field name="Amount">{$totalAmount}</field>,
-                                 <field name="OrderCount">{$totalOrderCount}</field>)
-            let $solrFields :=
-              for $r in $record
-                let $sid := $r/SON_SEGMENT/text()
-                let $sid := fn:concat("10",fn:index-of($segments,$sid))
-                let $segAmount := $r/AMOUNT/text()
-                let $segOrderCount := $r/ORDER_COUNT/text()
-                let $solrField := (<field name="SegAmount_{$sid}">{$segAmount}</field>,
+                                 <field name="OrderCount">{$totalOrderCount}</field>,
+                                  $customers)
+            let $segData :=
+              for $segGroup in $prodGroup
+                let  $sid := $segGroup/CUSTOMER_SEGMENT_ID/text()
+                group by $sid
+                return
+                  let $segAmount := sum($segGroup//AMOUNT/text())
+                  let $segOrderCount := sum($segGroup//ORDER_COUNT)
+                  let $segFields := (<field name="SegAmount_{$sid}">{$segAmount}</field>,
                                     <field name="SegOrderCount_{$sid}">{$segOrderCount}</field>)
-                return $solrField
+                  return $segFields
+                 
            return
-             map:entry($pid,($solrFields,$sumSolrFields)
-        )
-    
-        )
-   
+             map:entry($pid,($segData,$sumSolrFields)))
+             
    return $segMap
 };
 
@@ -269,7 +272,7 @@ declare function local:getDeltaVals ($custMap as map(*)) as item()*
       return ($disAmount,$disOrderCount,$disNumberOfClicks)
 };
   
-
+ 
 let $rnd := random:new()
 let $root := "C:/tmp/"
 let $text := file:read-text(fn:concat($root,"ProductModelDetails.csv"),"UTF-8") 
@@ -282,24 +285,22 @@ let $mapBrands :=
              
 let $mapFeatures :=
   map:new(for $record in fn:doc("Features")//record
-             return map:entry($record/PRODUCT_MODEL_ID/text(),$record/FEATURE_VALUE/text()))
+             let $pid := $record/PRODUCT_ID
+             group by $pid
+             return map:entry($pid,$record/FEATURE_VALUE/text()))
              
 let $mapFavorites :=
   map:new(for $record in fn:doc("Favorites")//record
-             return map:entry($record/PRODUCT_MODEL_ID/text(),$record/CUSTOMER_ID/text()))
+             let $pid := $record/PRODUCT_ID
+             group by $pid
+             return map:entry($pid,$record/CUSTOMER_ID/text()))
             
 let $mapProperties :=
   map:new(for $record in fn:doc("Properties")//record
-             return map:entry($record/PRODUCT_MODEL_ID/text(),$record/PROPERTY_NAME/text()))
-
-let $mapCustomers :=
-  map:new(for $record in fn:doc("Customers")//record
-                let $pid := $record/PRODUCT_ID
-                let $cid := $record/CUSTOMER_ID
-                group by $pid
-                return map:entry($pid,<block>{$cid}</block>))
- 
-                                       
+             let $pid := $record/PRODUCT_ID
+             group by $pid
+             return map:entry($pid,$record/PROPERTY_NAME/text()))
+                                                    
 (: temporary. get paths from test:)
 let $pathsmap :=
   map:new(for $record in fn:doc("Paths")//record
@@ -346,9 +347,7 @@ let $prods :=
     let $nclicks := if (fn:empty($nclicks)) then () 
                     else <field name="NumberOfClicks">{sum($nclicks)}</field> 
     let $segData := map:get($segMap,$pid)    
-    let $setData := if (fn:empty($segData)) then ()
-                    else $segData
-    
+     
     return file:append($outfile,
       <doc>  
           {$segData }
@@ -374,11 +373,6 @@ let $prods :=
                     )
           }
          
-         {for $r in map:get($mapFeatures,$pmid[1])
-           return
-            (<field name="ProductFeatures">{$r}</field>,
-              local:transTurkishChars("ProductFeatures",$r))
-         }
          {for $r in fn:distinct-values($shopCode)
            return
             <field name="ShopCode">{$r}</field>
@@ -403,15 +397,18 @@ let $prods :=
          }
            
          {for $r at $k in fn:distinct-values($storeID)
-           let $inPromotion := $isMigroskop[$k] eq "1" and 
+           let $inPromotion := $isMigroskop[$k] eq "1" or 
                                (($mccPrice[$k] < $price[$k] and $mccPrice[$k]> 0.0) or
                                 ($actionPrice[$k] < $price[$k] and $actionPrice[$k]> 0.0))
+           let $isMCC := ($mccPrice[$k] < $price[$k] and $mccPrice[$k]> 0.0)
+           
            return
              (<field name="StoreID">{$r}</field>,
              <field name="Price_{$r}">{$price[$k]}</field>,
              <field name="Mcc_Price_{$r}">{$mccPrice[$k]}</field>,
              <field name="Action_Price_{$r}">{$actionPrice[$k]}</field>,
-             <field name="InPromotion_{$r}">{$inPromotion}</field>
+             <field name="InPromotion_{$r}">{$inPromotion}</field>,
+             <field name="IsMCCProduct_{$r}">{$isMCC}</field>
              )
            }
                        
@@ -427,20 +424,29 @@ let $prods :=
             return
                ($pathLevels[fn:last() - 1],<field name="CategoryPath">{$r}</field>)
          }
-          {for $r in map:get($mapCustomers,$pid[1])//CUSTOMER_ID/text()
+         
+          {for $custids in map:get($mapFavorites,$pid[1])
            return
-            <field name="CustomersPurchased">{$r}</field>
+             for $cid in $custids
+              return
+              <field name="CustomersFavourite">{$cid}</field>
          }
          
-          {for $r in map:get($mapFavorites,$pid[1])//PRODUCT_MODEL_ID/text()
+          {for $props in map:get($mapProperties,$pid[1])
            return
-            <field name="Favorite">{$r}</field>
+             for $p in $props
+              return
+                <field name="ProductProperty">{$p}</field>
          }
          
-          {for $r in map:get($mapProperties,$pid[1])//PRODUCT_MODEL_ID/text()
+         {for $features in map:get($mapFeatures,$pmid[1])
            return
-            <field name="ProductProperty">{$r}</field>
+              for $f in $features
+              return
+                (<field name="ProductFeatures">{$f}</field>,
+                  local:transTurkishChars("ProductFeatures",$f))
          }
+         
          {
            if (fn:not(fn:empty($brandID[1]))) then
              let $brandName := map:get($mapBrands,$brandID[1])
