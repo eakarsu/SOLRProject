@@ -167,40 +167,71 @@ declare function local:getClicksMap () as map(*)
                  
       return $mapClicks
 };
-                                                          
-declare function local:getCRMSegmentMap () as map(*)
+                                                            
+declare %updating function local:addCRMDataIntoProducts () 
 {
-   let $segMap :=
-    map:new(
-        for $prodGroup in (fn:doc("FullCRMDataFormatted")//record)[fn:position() > 1]
-          let $pid := $prodGroup/PRODUCT_ID 
-          group by $pid
-          return 
-            let $totalAmount := sum($prodGroup//AMOUNT/text())
-            let $totalOrderCount := sum($prodGroup//ORDER_COUNT)
-            let $customers := 
-              for $cid in $prodGroup/CUSTOMER_ID/text()
-                return 
-                  <field name="CustomersPurchased">{$cid}</field>
-            let $sumSolrFields := (<field name="Amount">{$totalAmount}</field>,
-                                 <field name="OrderCount">{$totalOrderCount}</field>,
-                                  $customers)
-            let $segData :=
-              for $segGroup in $prodGroup
-                let  $sid := $segGroup/CUSTOMER_SEGMENT_ID/text()
-                group by $sid
-                return
-                  let $segAmount := sum($segGroup//AMOUNT/text())
-                  let $segOrderCount := sum($segGroup//ORDER_COUNT)
-                  let $segFields := (<field name="SegAmount_{$sid}">{$segAmount}</field>,
-                                    <field name="SegOrderCount_{$sid}">{$segOrderCount}</field>)
-                  return $segFields
+     
+     let $allProds := fn:doc("AccumulatedProducts")
+     let $segments := ("Aburcubur","Çay_Kahve","İçecek","Karma_Az","Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik")
+     let $productsMap :=
+            map:new(
+              for $rec in $allProds//doc
+                  let $prodIDField := $rec/field[@name eq "ProductID"]
+                  let $pid := $prodIDField/text()
+                    return
+                          map:entry($pid,$prodIDField))
                  
-           return
-             map:entry($pid,($segData,$sumSolrFields)))
-             
-   return $segMap
-};
+     for tumbling window $prodGroup in fn:doc("ProdCRMExport")//record
+          start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+          end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+   
+          let $pid := $prodGroup[1]/PRODUCT_ID 
+          return 
+            let $prodEntry := map:get($productsMap,$pid)/..          
+            return
+              if (fn:empty($prodEntry))   then  ()
+              else
+                  let $totalAmount := sum($prodGroup//AMOUNT/text())
+                  let $totalOrderCount := sum($prodGroup//ORDER_COUNT)
+                  let $customers := 
+                    for $cid in $prodGroup/CUSTOMER_ID/text()
+                      return 
+                        <field name="CustomersPurchased">{$cid}</field>
+                  let $sumSolrFields := (<field name="Amount">{$totalAmount}</field>,
+                                       <field name="OrderCount">{$totalOrderCount}</field>,
+                                        $customers)
+                  let $segData :=
+                    for $segGroup in $prodGroup
+                      let  $sid := $segGroup/CUSTOMER_SEGMENT_ID/text()
+                      let $sid := fn:concat("10",fn:index-of($segments,$sid))
+                      group by $sid
+                      return
+                        let $segAmount := sum($segGroup//AMOUNT/text())
+                        let $segOrderCount := sum($segGroup//ORDER_COUNT)
+                        let $segFields := (<field name="SegAmount_{$sid}">{$segAmount}</field>,
+                                          <field name="SegOrderCount_{$sid}">{$segOrderCount}</field>)
+                        return $segFields
+                       
+                 return
+                   insert nodes ($segData,$sumSolrFields) as last into $prodEntry
+                   
+         (:,
+         let $allAddedMap := map:new(
+            for tumbling window $prodGroup in fn:doc("ProdCRMExport")//record
+                start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+                  return map:entry($prodGroup[1]/PRODUCT_ID/text(),"1"))
+          
+         let $allProds := fn:doc("AccumulatedProducts")
+         for $pid in map:keys($productsMap)
+            let $doc := map:get($allAddedMap,$pid)
+            return
+              if (fn:empty($doc)) 
+              then 
+                 insert node map:get($productsMap,$pid) into $allProds/add
+              else () 
+          :)
+}; 
 
 declare function local:getCustMap () as map(*)
 {
@@ -271,9 +302,262 @@ declare function local:getDeltaVals ($custMap as map(*)) as item()*
       
       return ($disAmount,$disOrderCount,$disNumberOfClicks)
 };
+
+declare   %updating function local:addPriceDataIntoProducts ($shortProdMap as map(*),$clickMap as map(*)) 
+{
+   let $priceMap := 
+          map:new(
+          for tumbling window $psiRecordGroup in fn:doc("PSI_sorted")//record
+                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+                    let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
+                    return
+                      map:entry($pid,$psiRecordGroup))
+                      
+  let $n := 500
+  let $len := xs:int(fn:floor(map:size($priceMap) div $n))
+    for $k in 0 to $len
+      return
+        local:addPriceDataIntoProductsExt ($shortProdMap,$clickMap,$priceMap,xs:int($k * $n), xs:int(($k + 1)*$n))
+      
+};
+
+declare   %updating function local:addPriceDataIntoProductsExt ($shortProdMap as map(*),$clickMap as map(*),$priceMap as map(*),$start as xs:int, $end as xs:int) 
+{
+        let $prodStore := fn:doc("AccumulatedProducts")
+        
+       
+        (: PSI is sorted based product_id. here we gett all psi data fro per product_id in $psiRecordGroup variable:)
   
+        for $psiPid in (map:keys($priceMap))[fn:position() >= $start and fn:position() < $end]
+              let $psiRecordGroup := map:get ($priceMap,$psiPid)
+
+              let $psiIDs := $psiRecordGroup/PRODUCT_SALES_INFO_ID/text()
+              (: Get core product info :)   
+              let $prodRecord := map:get($shortProdMap,$psiPid)
+              return
+                if (fn:empty($prodRecord)) then ()
+                else
+                  let $stockModel := xs:int($prodRecord/STOCK_MODEL/text())
+                  let $isMigroskop := $prodRecord/IS_MIGROSKOP/text()
+                  let $priceTuples :=
+                    for $psiID at $k in $psiIDs
+                    
+                      let $mccP := xs:float($psiRecordGroup[$k]/MCC_PRICE/text())
+                      let $accP := xs:float($psiRecordGroup[$k]/ACTION_PRICE/text())
+                      let $price :=  xs:float($psiRecordGroup[$k]/PRICE/text()) 
+                      let $sAmount := $psiRecordGroup[$k]/STOCK_AMOUNT/text()
+                      let $finalPrice := 
+                          if ($mccP < $price and $mccP > 0) then $mccP
+                          else if ($accP < $price and $accP > 0) then $accP
+                          else $price
+                      let $sid := $psiRecordGroup[$k]/STORE_ID/text()          
+                     
+                      let $inPromotion := $isMigroskop eq "1" or 
+                                             (($mccP < $price and $mccP > 0.0) or
+                                              ($accP < $price and $accP > 0.0))
+                      let $isMCC := ($mccP < $price and $mccP> 0.0)
+                     (:inStock:true| false based on for each store price ((pm.stock_model <> 1 AND psi.stock_amount > 0) OR  pm.stock_model = 1):)
+                      let $inStock := if (($stockModel ne 1 and xs:float($sAmount) > 0) or $stockModel eq 1) then fn:true() else fn:false()
+                      return  
+                        (: 3 new fields here:)
+                        (<field name="Price_{$sid}">{$finalPrice}</field>,
+                         <field name="PSIID_{$sid}">{$psiID}</field>,
+                         <field name="InStock_{$sid}">{$inStock}</field>,               
+                         <field name="InPromotion_{$sid}">{$inPromotion}</field>,
+                         <field name="IsMCCProduct_{$sid}">{$isMCC}</field>,
+                         <field name="StoreID">{$sid}</field>)  
+               
+                      
+                 let $nclicks := for $r in $psiIDs 
+                                    return map:get($clickMap,$r)
+                 let $nclicks := if (fn:empty($nclicks)) then () 
+                                  else <field name="NumberOfClicks">{sum($nclicks)}</field> 
+                                  
+                 return
+                 insert nodes  ($nclicks,$priceTuples) as first into $prodStore/add
+                  (:  insert nodes  ($nclicks,$priceTuples) as first into $prodRecord :)
+};
+   
+declare   %updating function local:dumpPriceDataIntoFile ($outFileName as xs:string,$dbName as xs:string,$shortProdMap as map(*),$clickMap as map(*)) 
+{
+        
+        let $priceMap := 
+          map:new(
+          for tumbling window $psiRecordGroup in fn:doc("PSI_sorted")//record
+                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+                    let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
+                    return
+                      map:entry($pid,$psiRecordGroup))
+        
+       
+        let $sf := file:write-text($outFileName,"<add>")
+        (: PSI is sorted based product_id. here we gett all psi data fro per product_id in $psiRecordGroup variable:)
+        let $list :=
+        for $psiPid in map:keys($priceMap)
+              let $psiRecordGroup := map:get ($priceMap,$psiPid)
+
+              let $psiIDs := $psiRecordGroup/PRODUCT_SALES_INFO_ID/text()
+              (: Get core product info :)   
+              let $prodRecord := map:get($shortProdMap,$psiPid)
+              return
+                if (fn:empty($prodRecord)) then ()
+                else
+                  let $stockModel := xs:int($prodRecord/STOCK_MODEL/text())
+                  let $isMigroskop := $prodRecord/IS_MIGROSKOP/text()
+                  let $priceTuples :=
+                    for $psiID at $k in $psiIDs
+                    
+                      let $mccP := xs:float($psiRecordGroup[$k]/MCC_PRICE/text())
+                      let $accP := xs:float($psiRecordGroup[$k]/ACTION_PRICE/text())
+                      let $price :=  xs:float($psiRecordGroup[$k]/PRICE/text()) 
+                      let $sAmount := $psiRecordGroup[$k]/STOCK_AMOUNT/text()
+                      let $finalPrice := 
+                          if ($mccP < $price and $mccP > 0) then $mccP
+                          else if ($accP < $price and $accP > 0) then $accP
+                          else $price
+                      let $sid := $psiRecordGroup[$k]/STORE_ID/text()          
+                     
+                      let $inPromotion := $isMigroskop eq "1" or 
+                                             (($mccP < $price and $mccP > 0.0) or
+                                              ($accP < $price and $accP > 0.0))
+                      let $isMCC := ($mccP < $price and $mccP> 0.0)
+                     (:inStock:true| false based on for each store price ((pm.stock_model <> 1 AND psi.stock_amount > 0) OR  pm.stock_model = 1):)
+                      let $inStock := if (($stockModel ne 1 and xs:float($sAmount) > 0) or $stockModel eq 1) then fn:true() else fn:false()
+                      return  
+                        (: 3 new fields here:)
+                        (<field name="Price_{$sid}">{$finalPrice}</field>,
+                         <field name="PSIID_{$sid}">{$psiID}</field>,
+                         <field name="InStock_{$sid}">{$inStock}</field>,               
+                         <field name="InPromotion_{$sid}">{$inPromotion}</field>,
+                         <field name="IsMCCProduct_{$sid}">{$isMCC}</field>,
+                         <field name="StoreID">{$sid}</field>)  
+               
+                      
+                 let $nclicks := for $r in $psiIDs 
+                                    return map:get($clickMap,$r)
+                 let $nclicks := if (fn:empty($nclicks)) then () 
+                                  else <field name="NumberOfClicks">{sum($nclicks)}</field> 
+                 let $pidEntry := <PRODUCT_ID>{$psiPid}</PRODUCT_ID>                
+                 return 
+                   file:append($outFileName, <doc>{($pidEntry,$nclicks,$priceTuples)}</doc>)
+                  
+         let $ef := file:append($outFileName,"</add>")
+         
+         return local:indexFile ($dbName, $outFileName, ($sf,$list,$ef))
+};
+
+declare %updating function local:indexFile ($dbName as xs:string,$outFileName as xs:string,$args as item()*) 
+{
+   let $temp := "" 
+   return
+     db:create ($dbName,$outFileName)
+};
+                    
+declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatures as map(*),$mapFavorites as map(*),$mapProperties as map(*),
+                                                            $pathsmap as map(*),$mapMD as map(*),$shortProdMap as map(*)) 
+{
  
-let $rnd := random:new()
+       
+       let $prodStore := fn:doc("AccumulatedProducts")    
+       for $pid in map:keys($shortProdMap)
+                  let $record := map:get($shortProdMap,$pid)
+
+                  (:get core product data here:)
+                  let $prodModID := $record/PRODUCT_MODEL_ID/text()
+                  let $pid := $record/PRODUCT_ID/text()
+                  let $pDetail :=  <field name="ProductMoreDetail">{map:get($mapMD,$prodModID)}</field>   
+                 
+                  let $pidField:=<field name="ProductID">{$pid}</field>
+                  let $pmid :=  <field name="ProductModelID">{$prodModID}</field>
+                  let $pmn :=    <field name="ProductModelName">{$record/PRODUCT_MODEL_NAME/text()}</field>
+                  let $desc := <field name="Description"> {$record/DESCRIPTION/text()}</field>
+                  let $shopCode :=    $record/SHOP_CODE/text()
+                  let $shopID :=   $record/SHOP_ID/text()
+                  let $storeID :=$record/STORE_ID/text()
+                  let $isMigroskop :=  $record/IS_MIGROSKOP/text()
+                  let $brandID :=  $record/BRAND_ID/text() 
+               
+                   
+                  (: We will add ProductID fiel after adding customers CRM data. We have to locate product record with unique XML tag. Otherwise, xquery 
+                  i staking a lot of time to locate product. We are adding <PRODUCT_ID></PRODUCT_ID> into record. During CRM addition, we will remove it an dadd SOLR field:) 
+                  return
+                  insert node    
+                    <doc>   
+                       {$pidField} 
+                       {$pmid}
+                       {$pmn}
+                       {$pDetail}
+                       {$desc}
+                       <field name="IsMigroskop">{$isMigroskop}</field>
+                      
+                       {local:transTurkishChars("ProductMoreDetail",$pDetail/text())} 
+                       {local:transTurkishChars("ProductModelName",$pmn/text())}
+                       {local:transTurkishChars("Description",$desc/text())}
+                 
+                       {
+                        let $utriple := local:splitUnits($pmn)
+                        return
+                          if (fn:empty($utriple)) then ()
+                                  else
+                                    (<field name="UnitExpr">{$utriple[1]}</field>,
+                                    <field name="UnitVal">{$utriple[2]}</field>,
+                                    <field name="UnitSymbol">{$utriple[3]}</field>
+                                  )
+                       }
+                                 
+                       <field name="ShopCode">{$shopCode}</field>         
+                       <field name="ShopID">{$shopID}</field>
+                            
+                       {for $r in  map:get($pathsmap,$pmid) 
+                          let $ar := fn:tokenize($r,"\\")[fn:position() > 1]
+                          let $plen := fn:count($ar)
+                          let $pathLevels :=
+                            for $p at $j in $ar
+                              let $name := fn:concat("PathLevel",$plen - $j +1)
+                              return
+                                <field name="{$name}" >{$p}</field>
+                          return
+                             ($pathLevels[fn:last() - 1],<field name="CategoryPath">{$r}</field>)
+                       }
+                       
+                       {for $custids in map:get($mapFavorites,$pid)
+                         return
+                           for $cid in $custids
+                            return
+                            <field name="CustomersFavourite">{$cid}</field>
+                       }
+                       
+                       {for $props in map:get($mapProperties,$pid)
+                         return
+                           for $p in $props
+                            return
+                              <field name="ProductProperty">{$p}</field>
+                       }
+                       
+                       {for $features in map:get($mapFeatures,$pmid)
+                         return
+                            for $f in $features
+                            return
+                              (<field name="ProductFeatures">{$f}</field>,
+                                local:transTurkishChars("ProductFeatures",$f))
+                       }
+                       
+                       {
+                         if (fn:not(fn:empty($brandID[1]))) then
+                           let $brandName := map:get($mapBrands,$brandID)
+                           return
+                             <field name="BrandName">{$brandName}</field>
+                         else ()
+                       }
+                       
+                    </doc> as first into $prodStore/add
+
+};
+ 
+
+
 let $root := "C:/tmp/"
 let $text := file:read-text(fn:concat($root,"ProductModelDetails.csv"),"UTF-8") 
 let $options := { 'lax': 'no' }
@@ -313,150 +597,34 @@ let $mapMD :=
   map:new(for $record in $modelDetails//record
              return map:entry(($record/entry)[1]/text(), ($record/entry)[2]/text()))
 
-let $segMap := local:getCRMSegmentMap ()
+
 let $clickMap := local:getClicksMap ()
-let $outfile := fn:concat($root,"solrinputIstanbul.xml")
-let $addBegin := file:append-text($outfile,"<add>","UTF-8")
-       
-let $prods := 
-  for $record in fn:doc("Products")//record
-    let $prodModID := $record/*[fn:name() eq "PRODUCT_MODEL_ID"]/text()
-    let $pid := $record/*[fn:name() eq "PRODUCT_ID"]/text()
-    let $pDetail :=  <field name="ProductMoreDetail">{map:get($mapMD,$prodModID)}</field> 
-    let $pmid :=  <field name="ProductModelID">{$record/*[fn:name() eq "PRODUCT_MODEL_ID"]/text()}</field>
-    let $pmn :=    <field name="ProductModelName">{$record/*[fn:name() eq "PRODUCT_MODEL_NAME"]/text()}</field>
-    let $desc := <field name="Description"> {$record/*[fn:name() eq "DESCRIPTION"]/text()}</field>
-    let $shopCode :=    $record/*[fn:name() eq "SHOP_CODE"]/text()
-    let $shopID :=   $record/*[fn:name() eq "SHOP_ID"]/text()
-    let $storeID :=$record/*[fn:name() eq "STORE_ID"]/text()
-    let $keyword :=    $record/*[fn:name() eq "SEARCH_KEYWORD_VALUE"]/text()
-    let $categoryID :=    $record/*[fn:name() eq "CATEGORY_ID"]/text()
-    let $boost :=   $record/*[fn:name() eq "SEARCH_BOOST"]/text()
-    let $price :=    $record/*[fn:name() eq "PRICE"]/text()
-    let $actionPrice :=    $record/*[fn:name() eq "ACTION_PRICE"]/text()
-    let $mccPrice :=   $record/*[fn:name() eq "MCC_PRICE"]/text()
-    let $promotionType :=    $record/*[fn:name() eq "PROMOTION_TYPE"]/text()
-    let $path := $record/*[fn:name() eq "Path"]/text() 
-    let $isMigroskop :=  $record/*[fn:name() eq "IS_MIGROSKOP"]/text()
-    let $brandID :=  $record/*[fn:name() eq "BRAND_ID"]/text()
-    let $psiId := $record/*[fn:name() eq "PRODUCT_SALES_INFO_ID"]/text()
-     
-    group by $pid
-    let $nclicks := for $r in $psiId 
-                        return map:get($clickMap,$r)
-    let $nclicks := if (fn:empty($nclicks)) then () 
-                    else <field name="NumberOfClicks">{sum($nclicks)}</field> 
-    let $segData := map:get($segMap,$pid)    
-     
-    return file:append($outfile,
-      <doc>  
-          {$segData }
-          {$nclicks}
-         <field name="IsMigroskop">{$isMigroskop[1]}</field>
-         <field name="ProductID">{$pid}</field>
-         {$pDetail[1]}
-         {local:transTurkishChars("ProductMoreDetail",$pDetail[1]/text())}
-         {$pmid[1]}
-         {$pmn[1]}
-         {local:transTurkishChars("ProductModelName",$pmn[1]/text())}
-         {$desc[1]}
-         {local:transTurkishChars("Description",$desc[1]/text())}
+
+let $shortProdMap :=
+map:new(
+  for $rec in fn:doc("ShortProductInfo")//record
+      let $pid := $rec/PRODUCT_ID/text()
+      group by $pid
+        return
+              map:entry($pid,$rec))
+
+
+return
+  local:dumpPriceDataIntoFile ("c:\tmp\dump.xml","MyAcProds",$shortProdMap ,$clickMap)
+
+   (:local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$mapMD ,$shortProdMap ) :)
+   (:
+  return
+  local:addPriceDataIntoProducts ($shortProdMap,$clickMap )
+:)
+
+(:
+return
+  local:addCRMDataIntoProducts () 
+:)
+
+
+
+
   
-         {
-          let $utriple := local:splitUnits($pmn[1])
-          return
-            if (fn:empty($utriple)) then ()
-                    else
-                      (<field name="UnitExpr">{$utriple[1]}</field>,
-                      <field name="UnitVal">{$utriple[2]}</field>,
-                      <field name="UnitSymbol">{$utriple[3]}</field>
-                    )
-          }
-         
-         {for $r in fn:distinct-values($shopCode)
-           return
-            <field name="ShopCode">{$r}</field>
-         }
-          {for $r in fn:distinct-values($shopID)
-           return
-            <field name="ShopID">{$r}</field>
-         }
-         
-          {for $r in fn:distinct-values($keyword)
-           return
-            (<field name="SearchKeywordValue">{$r}</field>,
-              local:transTurkishChars("SearchKeywordValue",$r))
-         }
-          {for $r in fn:distinct-values($categoryID)
-           return
-            <field name="CategoryID">{$r}</field>
-         }
-          {for $r in fn:distinct-values($boost)
-           return
-            <field name="SearchBoost">{$r}</field>
-         }
-           
-         {for $r at $k in fn:distinct-values($storeID)
-           let $inPromotion := $isMigroskop[$k] eq "1" or 
-                               (($mccPrice[$k] < $price[$k] and $mccPrice[$k]> 0.0) or
-                                ($actionPrice[$k] < $price[$k] and $actionPrice[$k]> 0.0))
-           let $isMCC := ($mccPrice[$k] < $price[$k] and $mccPrice[$k]> 0.0)
-           
-           return
-             (<field name="StoreID">{$r}</field>,
-             <field name="Price_{$r}">{$price[$k]}</field>,
-             <field name="Mcc_Price_{$r}">{$mccPrice[$k]}</field>,
-             <field name="Action_Price_{$r}">{$actionPrice[$k]}</field>,
-             <field name="InPromotion_{$r}">{$inPromotion}</field>,
-             <field name="IsMCCProduct_{$r}">{$isMCC}</field>
-             )
-           }
-                       
-          
-          {for $r in  map:get($pathsmap,$pmid[1]) (: fn:distinct-values($path) :)
-            let $ar := fn:tokenize($r,"\\")[fn:position() > 1]
-            let $plen := fn:count($ar)
-            let $pathLevels :=
-              for $p at $j in $ar
-                let $name := fn:concat("PathLevel",$plen - $j +1)
-                return
-                  <field name="{$name}" >{$p}</field>
-            return
-               ($pathLevels[fn:last() - 1],<field name="CategoryPath">{$r}</field>)
-         }
-         
-          {for $custids in map:get($mapFavorites,$pid[1])
-           return
-             for $cid in $custids
-              return
-              <field name="CustomersFavourite">{$cid}</field>
-         }
-         
-          {for $props in map:get($mapProperties,$pid[1])
-           return
-             for $p in $props
-              return
-                <field name="ProductProperty">{$p}</field>
-         }
-         
-         {for $features in map:get($mapFeatures,$pmid[1])
-           return
-              for $f in $features
-              return
-                (<field name="ProductFeatures">{$f}</field>,
-                  local:transTurkishChars("ProductFeatures",$f))
-         }
-         
-         {
-           if (fn:not(fn:empty($brandID[1]))) then
-             let $brandName := map:get($mapBrands,$brandID[1])
-             return
-               <field name="BrandName">{$brandName}</field>
-           else ()
-         }
-         
-      </doc>)  
-      
-let $addEnd := file:append-text($outfile,"</add>","UTF-8")      
-  
-return ($addBegin,$prods,$addEnd)
+
