@@ -1,3 +1,10 @@
+set lines 9999 -- the appropriate size
+set head off  -- no header lines
+set colsep ';' --column separator to ;
+set pages 0 -- no pages
+set feed off
+
+
 SELECT p.product_id,
   cs.customer_id,
   seg.son_segment,
@@ -25,3 +32,7 @@ GROUP BY p.product_id,
   csseg.name,
   seg.son_segment;
 
+spool csv_file.csv
+/
+spool off;
+exit;

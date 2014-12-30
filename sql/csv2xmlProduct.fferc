@@ -1,0 +1,23 @@
+structure csv2xml {
+type separated | 
+output xml
+record record {
+field PRODUCT_MODEL_ID,
+field PRODUCT_MODEL_NAME,
+  field DESCRIPTION,
+  field SHOP_CODE,
+  field SHOP_ID,
+  field BRAND_ID,
+  field IS_MIGROSKOP,
+  field PRODUCT_ID,
+  field STOCK_MODEL
+}
+}
+output xml {
+file_header "<RECORDS>\n"
+data "<%n>%t</%n>\n"
+record_header "<%r>\n"
+record_trailer "</%r>\n"
+indent " "
+file_trailer "</RECORDS>\n"
+}

@@ -1,4 +1,4 @@
-SELECT p.PRODUCT_ID,
+SELECT p.PRODUCT_ID, 
   pmp.product_model_id,
   props.PROPERTY_NAME,
   props.TYPE "PROPERTY_TYPE"

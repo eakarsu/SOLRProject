@@ -1,0 +1,19 @@
+structure csv2xml {
+type separated ,
+output xml
+record record {
+field PRODUCT_ID
+field CUSTOMER_ID
+field CUSTOMER_SEGMENT_ID
+field AMOUNT
+field ORDER_COUNT
+}
+}
+output xml {
+file_header "<RECORDS>\n"
+data "<%n>%t</%n>\n"
+record_header "<%r>\n"
+record_trailer "</%r>\n"
+indent " "
+file_trailer "</RECORDS>\n"
+}

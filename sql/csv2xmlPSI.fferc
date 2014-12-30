@@ -1,0 +1,22 @@
+structure csv2xml {
+type separated |
+output xml
+record record {
+ field PRODUCT_ID
+  field PRICE
+  field MCC_PRICE
+  field ACTION_PRICE
+  field PROMOTION_TYPE
+  field PRODUCT_SALES_INFO_ID
+  field STOCK_AMOUNT
+  field STORE_ID
+}
+}
+output xml {
+file_header "<RECORDS>\n"
+data "<%n>%t</%n>\n"
+record_header "<%r>\n"
+record_trailer "</%r>\n"
+indent " "
+file_trailer "</RECORDS>\n"
+}

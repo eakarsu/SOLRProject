@@ -11,7 +11,11 @@ SELECT pm.PRODUCT_MODEL_ID,
   psi.price,
   psi.mcc_price,
   psi.action_price,
-  psi.promotion_type
+  psi.promotion_type,
+  psi.product_sales_info_id,
+  pm.stock_model,
+  psi.stock_amount,
+  psi.PRODUCT_SALES_INFO_ID
 FROM PRODUCTS p,
   PRODUCT_MODELS pm,
   SHOPS s,
@@ -23,9 +27,6 @@ p.product_model_id        = pm.product_model_id
 AND p.product_id              =psi.product_id
 AND psi.store_id              = st.store_id
 AND st.is_active              = 1
-AND (( pm.stock_model        <> 1
-AND psi.stock_amount          > 0)
-OR pm.stock_model             = 1)
 AND p.is_active               = 1
 AND pm.SHOP_ID                = s.SHOP_ID
 AND (s.is_active              = 1
