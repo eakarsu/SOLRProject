@@ -378,6 +378,93 @@ declare   %updating function local:addPriceDataIntoProductsExt ($shortProdMap as
                  insert nodes  ($nclicks,$priceTuples) as first into $prodStore/add
                   (:  insert nodes  ($nclicks,$priceTuples) as first into $prodRecord :)
 };
+ 
+             
+declare   %updating function local:addPriceDataIntoAccumulatedFile () 
+{
+        
+        let $clickMap := local:getClicksMap ()
+        
+        let $priceMap := 
+          map:new(
+          for tumbling window $psiRecordGroup in fn:doc("PSI_sorted")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
+                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+                    let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
+                    return
+                      map:entry($pid,$psiRecordGroup))
+                      
+        let $shortProdMap :=
+            map:new(
+              for $rec in fn:doc("ShortProductInfo")//record
+                  let $pid := $rec/PRODUCT_ID/text()
+                  let $exist := map:get($priceMap,$pid)    
+                  where fn:exists($exist)
+                    return
+                          map:entry($pid,$rec))
+                          
+        let $accProdMap :=
+            map:new(
+              for $rec in fn:doc("AccumulatedProducts")//doc
+                  let $pid := $rec/field[@name eq "ProductID"]/text()
+                  group by $pid
+                    return
+                          map:entry($pid,$rec))
+        
+               
+        for tumbling window $psiRecordGroup in fn:doc("PSI_sorted")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
+                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+                    let $psiPid := $psiRecordGroup[1]/PRODUCT_ID/text()
+                    let $psiIDs := $psiRecordGroup/PRODUCT_SALES_INFO_ID/text()
+                    (: Get core product info :)   
+                    let $prodRecord := map:get($shortProdMap,$psiPid)
+                    let $accRecord := map:get($accProdMap,$psiPid)
+                    return
+                      if (fn:empty($accRecord)) then ()
+                      else                        
+                        let $stockModel := xs:int($prodRecord/STOCK_MODEL/text())
+                        let $isMigroskop := $prodRecord/IS_MIGROSKOP/text()
+                        let $priceTuples :=
+                          for $psiID at $k in $psiIDs
+                          
+                            let $mccP := xs:float($psiRecordGroup[$k]/MCC_PRICE/text())
+                            let $accP := xs:float($psiRecordGroup[$k]/ACTION_PRICE/text())
+                            let $price :=  xs:float($psiRecordGroup[$k]/PRICE/text()) 
+                            let $sAmount := $psiRecordGroup[$k]/STOCK_AMOUNT/text()
+                            let $finalPrice := 
+                                if ($mccP < $price and $mccP > 0) then $mccP
+                                else if ($accP < $price and $accP > 0) then $accP
+                                else $price
+                            let $sid := $psiRecordGroup[$k]/STORE_ID/text()          
+                           
+                            let $inPromotion := $isMigroskop eq "1" or 
+                                                   (($mccP < $price and $mccP > 0.0) or
+                                                    ($accP < $price and $accP > 0.0))
+                            let $isMCC := ($mccP < $price and $mccP> 0.0)
+                           (:inStock:true| false based on for each store price ((pm.stock_model <> 1 AND psi.stock_amount > 0) OR  pm.stock_model = 1):)
+                            let $inStock := if (($stockModel ne 1 and xs:float($sAmount) > 0) or $stockModel eq 1) then fn:true() else fn:false()
+                            return  
+                              (: 3 new fields here:)
+                              (<field name="Price_{$sid}">{$finalPrice}</field>,
+                               if ($inStock) then (
+                               <field name="PSIID_{$sid}">{$psiID}</field>,
+                               <field name="InStock_{$sid}">{$inStock}</field>,               
+                               <field name="InPromotion_{$sid}">{$inPromotion}</field>,
+                               <field name="IsMCCProduct_{$sid}">{$isMCC}</field>) else (),
+                               <field name="StoreID">{$sid}</field>)  
+                     
+                            
+                       let $nclicks := for $r in $psiIDs 
+                                          return map:get($clickMap,$r)
+                       let $nclicks := if (fn:empty($nclicks)) then () 
+                                        else <field name="NumberOfClicks">{sum($nclicks)}</field> 
+                       let $pidEntry := <PRODUCT_ID>{$psiPid}</PRODUCT_ID>                
+                       return 
+                         insert nodes ($nclicks,$priceTuples) into $accRecord
+              
+}; 
+
    
 declare   %updating function local:dumpPriceDataIntoFile ($outFileName as xs:string,$dbName as xs:string,$shortProdMap as map(*),$clickMap as map(*)) 
 {
@@ -600,21 +687,32 @@ let $mapMD :=
 
 let $clickMap := local:getClicksMap ()
 
+ let $priceMap := 
+          map:new(
+          for tumbling window $psiRecordGroup in fn:doc("PSI_sorted")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
+                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+                    let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
+                    return
+                      map:entry($pid,$psiRecordGroup))
+                      
 let $shortProdMap :=
 map:new(
   for $rec in fn:doc("ShortProductInfo")//record
       let $pid := $rec/PRODUCT_ID/text()
+      let $exist := map:get($priceMap,$pid)    
       group by $pid
+       where fn:exists($exist)
         return
               map:entry($pid,$rec))
-
-
+  
+(:
 return
   local:dumpPriceDataIntoFile ("c:\tmp\dump.xml","MyAcProds",$shortProdMap ,$clickMap)
-
-   (:local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$mapMD ,$shortProdMap ) :)
-   (:
-  return
+:)
+return
+    (: local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$mapMD ,$shortProdMap ) :)     (:local:addCRMDataIntoProducts () :)     local:addPriceDataIntoAccumulatedFile () 
+  (:
   local:addPriceDataIntoProducts ($shortProdMap,$clickMap )
 :)
 
