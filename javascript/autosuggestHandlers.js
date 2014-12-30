@@ -13,7 +13,7 @@ var swig = require('swig');
 
 var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsTRMorphFullProduction3/suggest_topic?q=';
+var solrpath = '/migrossolr/ProductsTRMorphFullProduction4/suggest_topic?q=';
 var basepath = "/arabul?";
 var gradeWindowLen = 5; 
 var reRankDocs = 5000;

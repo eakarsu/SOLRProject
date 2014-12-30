@@ -17,9 +17,10 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = 'localhost';
+var host = '195.87.93.139';
+//var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsTRMorphFullProduction3/myselect?';
+var solrpath = '/migrossolr/ProductsTRMorphFullProduction4/myselect?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
 var reRankDocs = 5000;
@@ -78,8 +79,8 @@ var flList = [
     'PathLevel2',
     'IsMigroskop',
     'Price_STOREID',
-    'Mcc_Price_STOREID',
-    'Action_Price_STOREID',
+    'InStock_STOREID',
+    'PSIID_STOREID',
     'InPromotion_STOREID'
 ];
 
@@ -110,7 +111,7 @@ var facetFields = [
     'CustomersPurchased',
     'CustomersFavourite',
     'InPromotion_STOREID',
-    'Mcc_Price_STOREID',
+    'InStock_STOREID',
     'Price_STOREID',
     'SegAmount_SEGMENTID',
     'SegOrderCount_SEGMENTID',
@@ -607,7 +608,7 @@ function prepareSOLRQueryExt(customerid, storeid, discountPrefLev, custsegmentid
      * bq=AmountGrade:[1 TO 3]^12&bq=InPromotion_2566:true&stopwords=true
      */
     //Add facet.field=IsMigroskop after we add it to indexinf process
-    var faceFields = "facet=true&facet.limit=-1&facet.field=BrandName&facet.field=PathLevel2&facet.field=CustomersPurchased&facet.field=InPromotion_STOREID&facet.field=Mcc_Price_STOREID";
+    var faceFields = "facet=true&facet.limit=-1&facet.field=BrandName&facet.field=PathLevel2&facet.field=CustomersPurchased&facet.field=InPromotion_STOREID";
     faceFields = "&facet.field==SegAmount_SEGMENTID&facet.field=SegOrderCount_SEGMENTID&facet.field=NumberOfClicks&facet.field=Amount&facet.field=OrderCount";
     faceFields = faceFields.replace(/STOREID/g, storeid);
     faceFields = faceFields.replace(/SEGMENTID/g, custsegmentid);
@@ -640,7 +641,7 @@ function prepareReRankSOLRQueryExt(customerid, storeid, discountPrefLev, custseg
     adjustRankOrder(localRankOrder, storeid, custsegmentid, discountPrefLev);
 
     //Add facet.field=IsMigroskop after we add it to indexinf process
-    var faceFields = "facet=true&facet.limit=-1&facet.field=BrandName&facet.field=PathLevel2&facet.field=CustomersPurchased&facet.field=InPromotion_STOREID&facet.field=Mcc_Price_STOREID";
+    var faceFields = "facet=true&facet.limit=-1&facet.field=BrandName&facet.field=PathLevel2&facet.field=CustomersPurchased&facet.field=InPromotion_STOREID";
     faceFields = faceFields.replace(/STOREID/g, storeid);
 
     var firstQuery = prepareFirstQuery(localRankOrder);
@@ -682,7 +683,7 @@ function prepareOnlyBQOnlyQueryExt(customerid, storeid, discountPrefLev, custseg
     adjustRankOrder(localRankOrder, storeid, custsegmentid, discountPrefLev);
 
     //Add facet.field=IsMigroskop after we add it to indexinf process
-    var faceFields = "facet=true&facet.limit=-1&facet.field=BrandName&facet.field=PathLevel2&facet.field=CustomersPurchased&facet.field=InPromotion_STOREID&facet.field=Mcc_Price_STOREID";
+    var faceFields = "facet=true&facet.limit=-1&facet.field=BrandName&facet.field=PathLevel2&facet.field=CustomersPurchased&facet.field=InPromotion_STOREID";
     faceFields = faceFields.replace(/STOREID/g, storeid);
 
     var bqOnlyQuery = prepareBQOnlyQuery(localRankOrder, customerid);

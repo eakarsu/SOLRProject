@@ -286,7 +286,7 @@
 
             <!-- BEGIN CONTENT -->
             <div class="page-content-wrapper">
-                <div class="page-content" > 
+                <div class="page-content">
                     <!-- BEGIN PAGE HEAD -->
                     <form class="form-horizontal form-bordered" id="query-form" method="GET" action="/arabul">
                         <!-- new components -->
@@ -458,8 +458,9 @@
                         <!-- new components -->
                     </form>
                 </div>
-            
-       
+            </div>
+
+            <br/><br/>
             <div class="row search-form-default">
                 <div class="col-md-2">
                 </div>
@@ -503,9 +504,8 @@
                                     <th>UnitVal</th>
                                     <th>UnitExpr</th>
                                     <th>Price</th>
-                                    <th>Mcc_Price</th>
-                                    <th>Action_Price</th>
-                                    <th>Mcc_Price</th>
+                                    <th>InStock<th></th>
+                                    <th>PSIID<th></th>
                                 </tr>
                             </thead>
 
@@ -535,9 +535,8 @@
                                 <td>{{ record['UnitVal']|safe }}</td>
                                 <td>{{ record['UnitExpr']|safe }}</td>
                                 <td>{{ record['Price']|safe }}</td>
-                                <td>{{ record['Mcc_Price']|safe }}</td>
-                                <td>{{ record['Action_Price']|safe }}</td>
-                                <td>{{ record['Mcc_Price']|safe }}</td>
+                                <td>{{ record['InStock']|safe }}</td>
+                                <td>{{ record['PSIID']|safe }}</td>
                             </tr>
                             {% endfor %}
 
@@ -574,7 +573,6 @@
                     <div class="col-md-2">
                     </div>
                 </div>
-            </div>
             </div>
         </div>
     </body>
