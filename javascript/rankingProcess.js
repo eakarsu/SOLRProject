@@ -1080,6 +1080,73 @@ function handlePostSolrRequest(postBody)
 }
 ;
 
+function handleSortSolrRequest(postBody)
+{
+
+    var start = 0;
+    var queryKeyword = postBody["keyword"];
+    var customerid = postBody["customerId"];
+    var storeid = postBody["store"];
+    var custsegmentid = postBody["customerSegment"];
+    var discountlevel = postBody["campaignSensitivity"];
+    var sortkeyword = postBody['sortkeyword'];
+    var showsolrreq = false;
+
+    var facetList = getPostedFacetQueryParam(postBody);
+    
+    console.log("Received URL parameters  q=" + queryKeyword +
+            " storeid=" + storeid + " customerid=" + customerid + " custsegmentid=" +
+            custsegmentid + " discountlevel=" + discountlevel + " start=" + start + " showsolrreq=" + showsolrreq);
+
+    if (typeof start === 'undefined') {
+        start = 0;
+        console.log("setting start to 0");
+    }
+
+    var solrQuery = prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, start,sortkeyword,facetList);
+    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    console.log("Sending solrURL=" + solrURL);
+    return solrURL;
+}; 
+
+function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, start,sortkeyword,facetList)
+{
+   if (sortkeyword.match(/Price/)){
+        sortkeyword = sortkeyword.replace(" ","_"+storeid+" ");
+   }else if (sortkeyword.match(/Price/)){
+       sortkeyword = sortkeyword.replace(" ","_Sort ");
+   }
+   //facetVal.constructor === Array
+    var fPair = "";
+    for (var prop in facetList){
+        var facetVal = facetList[prop];
+        if (facetVal.constructor === Array){
+            for (var inprop in facetVal){
+                fPair = fPair.concat(" AND "+prop+":"+encodeURIComponent(facetVal[inprop]));
+            }
+        }else
+            fPair = fPair.concat(" AND "+prop+":"+encodeURIComponent(facetVal));
+    }
+    
+    var facetFieldsList = facetFields.join("&facet.field=");
+    var faceConfs = "facet=true&facet.mincount=1&facet.limit=100&facet.sort=count&f.CustomersPurchased.facet.prefix=" + customerid + "&f.CustomersFavourite.facet.prefix=" + customerid;
+    ;
+    var faceFields = faceConfs + "&facet.field=" + facetFieldsList;
+
+    faceFields = faceFields.replace(/STOREID/g, storeid);
+    faceFields = faceFields.replace(/SEGMENTID/g, custsegmentid);
+
+    queryKeyword = encodeURIComponent(queryKeyword);
+    var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid) + ",score";
+    var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
+    var solrURL = "q=StoreID:" + storeid + fPair+" AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&" + extraOpts;
+    solrURL = solrURL + "&" + faceFields+"&sort="+sortkeyword;
+
+    return solrURL;
+
+}
+;
+
 exports.prepareSOLRQuery = prepareSOLRQuery;
 exports.getFL = getFL;
 exports.prepareBrowseQuery = prepareBrowseQuery;
@@ -1087,4 +1154,5 @@ exports.prepareReRankSOLRQuery = prepareReRankSOLRQuery;
 exports.prepareBQOnlySOLRQuery = prepareBQOnlySOLRQuery;
 exports.prepareBQOnlySOLRQuery2 = prepareBQOnlySOLRQuery2;
 exports.handlePostSolrRequest = handlePostSolrRequest;
+exports.handleSortSolrRequest = handleSortSolrRequest;
 exports.getFacetQueryParam = getFacetQueryParam;

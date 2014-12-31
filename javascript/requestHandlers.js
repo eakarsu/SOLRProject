@@ -443,6 +443,7 @@ function reformatSolrResult (solrBody,postBody)
     
 };
 
+
 function handlePostSolrRequest(inresponse, request) {
     
     console.log("Request handler 'handlePostSolrRequest' was called for " + request.url); 
@@ -455,7 +456,12 @@ function handlePostSolrRequest(inresponse, request) {
     {
         console.log(body);  
         var postBody = JSON.parse(body);
-        var solrURL = rankingProcess.handlePostSolrRequest (postBody);
+        var sortkeyword = postBody['sortkeyword'];
+        var solrURL = "";
+        if (typeof sortkeyword !== 'undefined' && sortkeyword.length > 0){
+            solrURL = rankingProcess.handleSortSolrRequest (postBody);
+        }else
+            solrURL = rankingProcess.handlePostSolrRequest (postBody);
        
         requestmod(solrURL, function (error, response, solrBody) {
             console.log ("SOLR response:"+solrBody);
@@ -466,6 +472,7 @@ function handlePostSolrRequest(inresponse, request) {
         }); 
     });
 }
+
 
 function start(response) {
     console.log("Request handler 'start' was called.");
