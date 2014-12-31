@@ -464,7 +464,6 @@ function handlePostSolrRequest(inresponse, request) {
             solrURL = rankingProcess.handlePostSolrRequest (postBody);
        
         requestmod(solrURL, function (error, response, solrBody) {
-            console.log ("SOLR response:"+solrBody);
             var reformattedResult = reformatSolrResult(solrBody,postBody);
             inresponse.writeHead(200, { 'Content-Type': 'application/json' });
             inresponse.write(JSON.stringify(reformattedResult));

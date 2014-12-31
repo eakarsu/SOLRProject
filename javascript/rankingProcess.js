@@ -1113,7 +1113,7 @@ function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, 
 {
    if (sortkeyword.match(/Price/)){
         sortkeyword = sortkeyword.replace(" ","_"+storeid+" ");
-   }else if (sortkeyword.match(/Price/)){
+   }else if (sortkeyword.match(/ProductModelName/)){
        sortkeyword = sortkeyword.replace(" ","_Sort ");
    }
    //facetVal.constructor === Array
