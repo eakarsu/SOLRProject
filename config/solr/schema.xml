@@ -117,7 +117,7 @@
    <field name="_root_" type="string" indexed="true" stored="false"/>
     
    <!-- Migros variables here -->
-      <field name="ProductModelID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+   <field name="ProductModelID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
    <field name="ProductID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
    <field name="ProductModelName" type="text_tr" indexed="true" stored="true"/>
    <field name="Description" type="text_tr" indexed="true" stored="true"/>
@@ -139,20 +139,23 @@
    <field name="UnitVal" type="float" indexed="true" stored="true"  multiValued="false" />
    <field name="UnitExpr" type="text_tr" indexed="true" stored="true"  multiValued="false" />
    <field name="PathLevel2" type="notoktext_tr" indexed="true" stored="true" multiValued="true"/>	
-   <field name="ProductFeatures_TR" type="textExact" indexed="true"  multiValued="true" stored="true"/>
-   <field name="ProductMoreDetail_TR" type="textExact" indexed="true" stored="true"/>
-   <field name="SearchKeywordValue_TR" type="textExact" multiValued="true" indexed="true" stored="true"/>
-   <field name="ProductModelName_TR" type="textExact" indexed="true" stored="true"/>
-   <field name="Description_TR" type="textExact" indexed="true" stored="true"/>
+   <field name="ProductFeatures_TR" type="textExact" indexed="true"  multiValued="true" stored="false"/>
+   <field name="ProductMoreDetail_TR" type="textExact" indexed="true" stored="false"/>
+   <field name="SearchKeywordValue_TR" type="textExact" multiValued="true" indexed="true" stored="false"/>
+   <field name="ProductModelName_TR" type="textExact" indexed="true" stored="false"/>
+   <field name="Description_TR" type="textExact" indexed="true" stored="false"/>
    <field name="BrandName" type="notoktext_tr" indexed="true" stored="true"/>
-   <field name="BrandName_TR" type="textExact" indexed="true" stored="true"/>  
+   <field name="BrandName_TR" type="textExact" indexed="true" stored="false"/>  
    <field name="IsMigroskop" type="int" indexed="true" stored="true"/>
  
-   <!-- Facets -->
-   <field name="BrandName_Facet" type="notoktext_tr_facet" indexed="true" stored="true"/>
-   <field name="PathLevel2_Facet" type="notoktext_tr_facet" indexed="true" stored="true" multiValued="true"/>
-   <field name="ProductProperty_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="true"/>
+   <!-- sortable field -->	
+   <field name="ProductModelName_Sort" type="alphaOnlySort" indexed="true" stored="false"/>
 
+   <!-- Facets -->
+   <field name="BrandName_Facet" type="notoktext_tr_facet" indexed="true" stored="false"/>
+   <field name="PathLevel2_Facet" type="notoktext_tr_facet" indexed="true" stored="false" multiValued="true"/>
+   <field name="ProductProperty_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
+   
    <!-- Price Fields. Triple price value per store -->  
    <dynamicField name="Price_*" type="float" indexed="true" multiValued="false" stored="true"/>
    <dynamicField name="InStock_*" type="boolean" indexed="true" multiValued="false" stored="true"/>  
@@ -382,6 +385,7 @@
    <copyField source="ProductModelName_TR" dest="suggest"/>
 
    <copyField source="ProductModelName" dest="suggest_ngram"/>
+   <copyField source="ProductModelName" dest="ProductModelName_Sort"/>
    <copyField source="ProductModelName_TR" dest="suggest_ngram"/>
 
    <!-- Create a string version of author for faceting -->
