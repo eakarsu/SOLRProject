@@ -17,7 +17,7 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = '195.87.93.139';
+var host = '192.168.191.141';
 //var host = 'localhost';
 var port = '8080';
 var solrpath = '/migrossolr/ProductsTRMorphFullProduction4/myselect?';
@@ -58,11 +58,6 @@ var flList = [
     'ProductID',
     'ProductModelID',
     'ProductModelName',
-    //'SegAmountGrade_SEGMENTID',
-    //'SegOrderCountGrade_SEGMENTID',
-    //'NumberOfClicksGrade',
-    //'AmountGrade',
-    //'OrderCountGrade',
     'SegAmount_SEGMENTID',
     'SegOrderCount_SEGMENTID',
     'NumberOfClicks',
@@ -81,9 +76,11 @@ var flList = [
     'Price_STOREID',
     'InStock_STOREID',
     'PSIID_STOREID',
-    'InPromotion_STOREID'
+    'InPromotion_STOREID',
+    'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
+    'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
 ];
-
+ 
 
 var qlList = [
     'ProductMoreDetailExact',
@@ -101,13 +98,11 @@ var qlList = [
     'Description_TR',
     'ProductProperty_TR'
 ];
-
+  
 var facetFields = [
     'IsMCCProduct_STOREID',
     'UnitSymbol',
     'IsMigroskop',
-    'BrandName',
-    'PathLevel2',
     'CustomersPurchased',
     'CustomersFavourite',
     'InPromotion_STOREID',
@@ -117,7 +112,10 @@ var facetFields = [
     'SegOrderCount_SEGMENTID',
     'NumberOfClicks',
     'Amount',
-    'OrderCount'
+    'OrderCount',
+    'PathLevel2_Facet',
+    'BrandName_Facet',
+    'ProductProperty_Facet'
 ];
 
 
@@ -479,10 +477,11 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
     allSortExprs = [];
     var sortedRankOrder = sortObject(localRankOrder);
 
-    for (x in sortedRankOrder) {
+    /*for (x in sortedRankOrder) {
         console.log(" sorted: " + sortedRankOrder[x].key + ":" + sortedRankOrder[x].value);
     }
-
+    */
+   
     prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, exactSortExpr, exactSortExpr2, customerid);
     prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid);
 
@@ -699,14 +698,19 @@ function prepareOnlyBQOnlyQueryExt(customerid, storeid, discountPrefLev, custseg
 }
 ;
 
-function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword, start,facetQueryPair)
+function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword, start,facetList)
 {
-
-    var fQKey = facetQueryPair[0];
-    var fQVal = facetQueryPair[1];
-    var fPair ="";
-    if (fQKey !== ""){
-        fPair = " AND "+fQKey+":"+encodeURIComponent(fQVal)+"&";
+   
+   //facetVal.constructor === Array
+    var fPair = "";
+    for (var prop in facetList){
+        var facetVal = facetList[prop];
+        if (facetVal.constructor === Array){
+            for (var inprop in facetVal){
+                fPair = fPair.concat(" AND "+prop+":"+encodeURIComponent(facetVal[inprop]));
+            }
+        }else
+            fPair = fPair.concat(" AND "+prop+":"+encodeURIComponent(facetVal));
     }
     
     var hlPars = "hl=true&hl.fl=ProductModelName&hl.encoder=html&hl.simple.pre=<b>&hl.simple.post=</b>&f.ProductModelName.hl.fragsize=30&f.ProductModelName.hl.snippets=3&f.ProductModelName.hl.alternateField=ProductModelName";
@@ -737,7 +741,7 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     var sortQuery = prepareBFExpression2(localRankOrder, customerid, queryKeyword);
 
     var pfqfOnlyQuery = preparePFQFQuery(localRankOrder);
-
+ 
     queryKeyword = encodeURIComponent(queryKeyword);
     var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
@@ -885,32 +889,113 @@ function getFacetQueryParam(query)
     var storeid = query.storeid;
     var isMcc = "IsMCCProduct_" + storeid;
     var isProm = "InPromotion_" + storeid;
-    if (typeof query[isMcc] !== 'undefined') {
-        facetQuery = isMcc;
-        facetVal = query[isMcc];
-    } else if (typeof query['UnitSymbol'] !== 'undefined') {
-        facetQuery = 'UnitSymbol';
-        facetVal = query['UnitSymbol'];
-    } else if (typeof query['IsMigroskop'] !== 'undefined') {
-        facetQuery = 'IsMigroskop';
-        facetVal = query['IsMigroskop'];
-    } else if (typeof query['BrandName'] !== 'undefined') {
-        facetQuery = 'BrandName';
-        facetVal = query['BrandName'];
-    } else if (typeof query['PathLevel2'] !== 'undefined') {
-        facetQuery = 'PathLevel2';
-        facetVal = query['PathLevel2'];
-    } else if (typeof query['CustomersPurchased'] !== 'undefined') {
-        facetQuery = 'CustomersPurchased';
-        facetVal = query['CustomersPurchased'];
-    } else if (typeof query['CustomersFavourite'] !== 'undefined') {
-        facetQuery = 'CustomersFavourite';
-        facetVal = query['CustomersFavourite'];
-    } else if (typeof query[isProm] !== 'undefined') {
-        facetQuery = isMcc;
-        facetVal = query[isProm];
+    var facetList = {};
+    for (var prop in query){
+        console.log ("checking prop="+prop+":"+query[prop]);      
+        if (prop.match(/PathLevel2|ProductProperty/)) {
+            facetVal = query[prop];
+            facetList[prop] = [];
+            if (facetVal.constructor === Array){
+                for (var index in facetVal){
+                    var val = facetVal[index].replace(/"/g,"");
+                    facetList[prop].push('"'+val+'"');
+                  }
+            }
+            else
+             facetList[prop] = facetVal;
+        }else if (prop === isMcc || prop === isProm || prop.match(/UnitSymbol|IsMigroskop|BrandName|CustomersPurchased|CustomersFavourite|ProductProperty/)){
+            facetVal = query[prop];
+            facetList[prop] = facetVal;
+        }
     }
-    return [facetQuery,facetVal];
+    for (var prop in facetList){
+        console.log ("facet prop="+prop+":"+facetList[prop]);
+    }
+    
+    return facetList;
+};
+
+/**
+ * 
+ * @param {type} query
+ * @returns {String|getPostedFacetQueryParam.query}
+ * "filters": [
+        {"k": "myFavorites", "v": true},
+        {"k": "myOldOrders", "v": true},
+        {"k": "inPromotion", "v": true},
+        {"k": "migroskop", "v": true},
+        {"k": "mcc", "v": true},
+        {"k": "categories", "v": ["hazır çocuk yemekleri", "biberonlar"]},
+        {"k": "brands", "v": ["milupa", "bebelac"]},
+        {"k": "units", "v": ["kg", "gr"]},
+        {"k": "productProperty", "v": ["?", "?", "?"]}
+    ]
+ */
+function getPostedFacetQueryParam(postBody)
+{
+    
+    var storeid = postBody["store"];
+    var isMcc = "IsMCCProduct_" + storeid;
+    var isProm = "InPromotion_" + storeid;
+    var facetList = {};
+    var filters = postBody["filters"];
+    for (var j in filters){
+        var facetQuery = "";
+        var facetVal = "";
+        var allVals = "";
+        if (filters[j]["k"] === "mcc") {
+            facetQuery = isMcc;
+            facetVal = filters[j]["v"];
+            facetList[facetQuery] = facetVal;
+        }else if (filters[j]["k"] === "units") {
+            facetQuery = 'UnitSymbol';
+            facetVal = filters[j]["v"];
+             for (var k in facetVal){
+                allVals=allVals.concat("\""+facetVal[k]+"\"");
+            }
+            facetList[facetQuery] = allVals;
+        }else  if (filters[j]["k"] === "migroskop") {
+            facetQuery = 'IsMigroskop';
+            facetVal = filters[j]["v"];
+            facetList[facetQuery] = facetVal;
+        }else  if (filters[j]["k"] === "brands") {
+            facetQuery = 'BrandName';
+            facetVal = filters[j]["v"];
+            for (var k in facetVal){
+                 allVals=allVals.concat("\""+facetVal[k]+"\"");
+            }
+            facetList[facetQuery] = allVals;
+        }else  if (filters[j]["k"] === "categories") {
+            facetQuery = 'PathLevel2';
+            facetVal = filters[j]["v"];
+            for (var k in facetVal){
+                allVals=allVals.concat("\""+facetVal[k]+"\"");
+            }
+            facetList[facetQuery] = allVals;
+        }else  if (filters[j]["k"] === "myOldOrders") {
+            facetQuery = 'CustomersPurchased';
+            facetVal = filters[j]["v"];
+            facetList[facetQuery] = facetVal;
+        }else  if (filters[j]["k"] === "myFavorites") {
+            facetQuery = 'CustomersFavourite';
+            facetVal = filters[j]["v"];
+            facetList[facetQuery] = facetVal;
+        } else if (filters[j]["k"] === "inPromotion") {
+            facetQuery = isProm;
+            facetVal = filters[j]["v"];
+            facetList[facetQuery] = facetVal;
+        }else  if (filters[j]["k"] === "productProperty") {
+            facetQuery = "ProductProperty";
+            facetVal = filters[j]["v"];
+            for (var k in facetVal){
+                allVals=allVals.concat("\""+facetVal[k]+"\"");
+            }
+            facetList[facetQuery] = allVals;
+        }
+    };
+    console.log ("facet list:"+facetList);
+    
+    return facetList;
 };
 
 function prepareBQOnlySOLRQuery2(request)
@@ -940,6 +1025,58 @@ function prepareBQOnlySOLRQuery2(request)
     var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
+};
+
+/*
+ * {
+    "keyword": "elma",
+    "store": 237,
+    "customerId": 4380562,
+    "campaignSensitivity": 1,
+    "customerSegment": 101,
+    "offset": 50,
+    "limit": 100,
+    "filterResultLimit": 5,
+    "language": "tr",
+	"filters": [
+        {"k": "myFavorites", "v": true},
+        {"k": "myOldOrders", "v": true},
+        {"k": "inPromotion", "v": true},
+        {"k": "migroskop", "v": true},
+        {"k": "mcc", "v": true},
+        {"k": "categories", "v": ["hazır çocuk yemekleri", "biberonlar"]},
+        {"k": "brands", "v": ["milupa", "bebelac"]},
+        {"k": "units", "v": ["kg", "gr"]},
+        {"k": "productProperty", "v": ["?", "?", "?"]}
+    ]
+};
+ */
+function handlePostSolrRequest(postBody)
+{
+
+    var start = 0;
+    var queryKeyword = postBody["keyword"];
+    var customerid = postBody["customerId"];
+    var storeid = postBody["store"];
+    var custsegmentid = postBody["customerSegment"];
+    var discountlevel = postBody["campaignSensitivity"];
+    var showsolrreq = false;
+
+    var facetQueryPair = getPostedFacetQueryParam(postBody);
+    
+    console.log("Received URL parameters  q=" + queryKeyword +
+            " storeid=" + storeid + " customerid=" + customerid + " custsegmentid=" +
+            custsegmentid + " discountlevel=" + discountlevel + " start=" + start + " showsolrreq=" + showsolrreq);
+
+    if (typeof start === 'undefined') {
+        start = 0;
+        console.log("setting start to 0");
+    }
+
+    var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);
+    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    console.log("Sending solrURL=" + solrURL);
+    return solrURL;
 }
 ;
 
@@ -949,3 +1086,5 @@ exports.prepareBrowseQuery = prepareBrowseQuery;
 exports.prepareReRankSOLRQuery = prepareReRankSOLRQuery;
 exports.prepareBQOnlySOLRQuery = prepareBQOnlySOLRQuery;
 exports.prepareBQOnlySOLRQuery2 = prepareBQOnlySOLRQuery2;
+exports.handlePostSolrRequest = handlePostSolrRequest;
+exports.getFacetQueryParam = getFacetQueryParam;

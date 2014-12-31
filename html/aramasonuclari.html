@@ -101,7 +101,8 @@
                 document.getElementById('customerid').value = '{{customerid|safe}}';
                 document.getElementById('custsegmentid').value = '{{custsegmentid|safe}}';
                 document.getElementById('discountlevel').value = '{{discountlevel|safe}}';
-
+                document.getElementById('prevFilters').value = '{{prevFilters|safe}}';
+                
                 $("#q").keypress(function (e) {
                     if (e.keyCode === 13) {
                         if ($("#q").val() == '') {
@@ -136,10 +137,12 @@
                         return false;
                     }
                     var url = $(this).attr('href');
+                    var prevFilters = document.getElementById('prevFilters').value;
+                                     
                     var si = $("#startindex").attr("value");
                     var ei = $("#endindex").attr("value");
 
-                    url = url + "&startindex=" + si + "&endindex=" + ei;
+                    url = url + "&startindex=" + si + "&endindex=" + ei+"&"+prevFilters;
 
                     $(this).attr('href', url);
                     //window.location = url;
@@ -240,7 +243,7 @@
                                                         {% endfor %}                                                 
 						</ul>                                                    
 					</li>
-                                        
+                                         
                                         <li>
 						<a href="javascript:;">
 						<i class="icon-basket"></i>
@@ -277,6 +280,23 @@
 						</ul>                                                    
 					</li>
 					
+                                        <li> 
+						<a href="javascript:;">
+						<i class="icon-basket"></i>
+						<span class="title">Urun Ozellik</span>
+						<span class="arrow "></span>
+						</a>
+						<ul class="sub-menu">
+                                                     
+                                                        {% for record in facets.ProductProperty %}
+							<li>
+								<a href="{{record['facetQueryUrl']}}">
+								<i class="icon-home"></i>
+								{{record['facetValue']}}  ({{record['facetCount']}})</a>
+							</li>
+                                                        {% endfor %}                                                 
+						</ul>                                                    
+					</li>
 				
 				</ul>
 				<!-- END SIDEBAR MENU -->
@@ -310,6 +330,7 @@
                                     <input class="form-control col-md-3" type="text" id="q" name="q" value="{{queryString|safe}}"/>
                                     <input type="hidden" id="startindex" name="startindex" value="{{startindex}}">
                                     <input type="hidden" id="endindex" name="endindex" value="{{endindex}}">
+                                    <input type="hidden" id="prevFilters" name="prevFilters" value="{{prevFilters|safe}}">
                                 </div>
                                 <div class="col-md-1">
                                     <span class="input-group-btn">
@@ -468,6 +489,7 @@
                     <h5>{{numFound}} adet sonuc {{qtime}} milisaniyede bulundu: customerid={{customerid|safe}}, storeid={{storeid|safe}},
                         custsegmentid={{custsegmentid|safe}}, discountlevel={{discountlevel|safe}} </h5>
                     <h5>SOLR Request sent={{solrURL|safe}}</h5>
+                    <h5>PATH -> {{prevFilters|safe}}</h5>
                 </div>
             </div>
             <br/>

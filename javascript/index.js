@@ -22,6 +22,10 @@ app.get('/arabul', function(req,res) {
 app.get('/autosuggest', function(req,res) {
 	autosuggest.autosuggest(res,req);
 });
+ 
+app.get('/postsolrrequest', function(req,res) {
+	requestHandlers.handlePostSolrRequest(res,req);
+});
 
 //app.configure(function(){
 //  app.use('/media', express.static(__dirname + '/media'));

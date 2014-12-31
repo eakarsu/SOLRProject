@@ -32,7 +32,7 @@ function test ()
     }
 };
 
-function findFacetingValues (solrdata,query)
+function findFacetingValues (solrdata,customerid,storeid,query)
 {
     /*
     var facetNames=[
@@ -47,15 +47,15 @@ function findFacetingValues (solrdata,query)
    ];
      */    
     var facetQueryUrlInit = rankingProcess.prepareBrowseQuery(query);
-    var customerid = query.customerid;
-    var storeid = query.storeid;
     var facets = {};
     var facetFieldsData = solrdata.facet_counts.facet_fields;
     for (var facetName in facetFieldsData){
         var facetQueryUrl = facetQueryUrlInit;
-        console.log("Facet name:"+facetName);
+        
          var facetVals = facetFieldsData[facetName];
+         var origFacetName = facetName;
          facetName = facetName.replace(/_.*/,"");
+         //console.log("Facet name:"+origFacetName+":"+facetVals.length);
          /**
             "CustomersPurchased":[ "852708",4],
             "CustomersFavourite":[],
@@ -83,7 +83,6 @@ function findFacetingValues (solrdata,query)
         }
         else{
             var array = [];
-            
             for (var j=0;j<facetVals.length;j+=2){
                 var facetQueryUrl = facetQueryUrlInit;
                 var facetValue = facetVals[j];
@@ -99,6 +98,19 @@ function findFacetingValues (solrdata,query)
             facets[facetName] = array;
         }
     }  
+     
+     /*
+    console.log ("FACETS..");
+    for (var prop in facets){
+        var facetVal = facets [prop];
+        console.log (prop+":"+facetVal.facetCount);
+        if (facetVal.constructor === Array){
+            for (var prop2 in facetVal){
+                console.log (facetVal[prop2].facetValue+":"+facetVal[prop2].facetCount);
+            }
+        }
+    }
+    */
     return facets;
 } 
 
@@ -114,13 +126,14 @@ function setupResults(body,storeid,custsegmentid,query) {
     var rows = new Array();
     var flist = rankingProcess.getFL();
     
-    facets = findFacetingValues(solrdata,query);
+    var customerid = query.customerid;
+    var facets = findFacetingValues(solrdata,customerid,storeid,query);
     
     for (j = 0; j < docs.length; j++) {
         rows[j] = {};
         for (k in flist){
             var field = flist[k];
-            var newFieldName = field.replace(/SEGMENTID/g,custsegmentid).replace(/STOREID/g,storeid);
+            var newFieldName = field.replace(/SEGMENTID/g,custsegmentid).replace(/STOREID/g,storeid).replace(/:.*/g,"");
             var fieldVal = docs[j][newFieldName];
             if (newFieldName === 'ProductMoreDetail'){
                 fieldVal = fieldVal.replace(/\r\n|\n/g, '');
@@ -227,11 +240,26 @@ function buildPage(response, body, query, requesturl,solrURL) {
         solrURLText = "SOLR Query sent : "+solrURL;
     }
     
+    var facets = rankingProcess.getFacetQueryParam (query);
+    var facetFilters = [];
+    for (var prop in facets){
+        var propVal = facets[prop];//.replace(/"/g,"");
+        console.log("Addigin filter :"+propVal);
+        if (propVal.constructor === Array){
+            for (var index in propVal){
+                facetFilters.push(prop+"="+propVal[index]);
+            }
+        }
+        else    
+            facetFilters.push(prop+"="+propVal);
+    } 
+    var prevFilters = facetFilters.join("&");
+    
     var rData = {records: rows, nexturl: pgs.nexturl, prevurl: pgs.prevurl, pageindexes: pgs.pageindexes,
         startindex: pgs.startindex, endindex: pgs.endindex,
         qtime: results.qtime, numFound: results.numFound, queryString: query.q, currentindex: pgs.currentindex,
         customerid:query.customerid,storeid:query.storeid,custsegmentid:query.custsegmentid,discountlevel:query.discountlevel,solrURL:solrURLText,
-        facets:pgs.facets};
+        facets:results.facets,prevFilters:prevFilters};
   
     /*var page = fs.readFileSync(resultspage, "utf8"); // bring in the HTML file
      var html = mustache.to_html(page, rData); // replace all of the data
@@ -260,6 +288,183 @@ function solrdata(presponse, request) {
 
     });
 
+}
+ 
+     /**    {psi: 176227,
+            pmn: "MİLUPA ORGANİK ŞEFTALİ ELMA KAVANOZ MAMASI 125 GR",
+            price: 2.15,
+            mccPrice: 0.0,
+            actionPrice: 0.0,
+            calculatedPrice: 2.15,
+            category: "Meyve Suyu",
+            brand: "Dimes",
+            unit: "1 L",
+            onStock: true,
+            myFavorites: true,
+            myOldOrders: false,
+            inPromotion: true,
+            migroskop: false,
+            mcc: true}
+filters: [
+        {k: "myFavorites", v: 4},
+
+        {k: "myOldOrders", v: 2},
+
+        {k: "inPromotion", v: 8},
+
+        {k: "migroskop", v: 7},
+
+        {k: "mcc", v: 5},
+
+        {
+            k: "categories", v: [
+            {"n": "çay kahve", c: 3},
+            {"n": "unlu mamuller", c: 2}
+        ]
+        },
+
+        {
+            k: "brands", v: [
+            {"n": "cappy", c: 24},
+            {"n": "elma", c: 21},
+            {"n": "migros", c: 2}
+        ]
+        },
+
+        {
+            k: "units", v: [
+            {"n": "GR", c: 5},
+            {"n": "ML", c: 3}
+        ]
+        },
+
+        {
+            k: "productProperty", v: [
+            {"n": "?", c: '?'},
+            {"n": "?", c: '?'}
+        ]
+        }
+    ]
+             */
+function reformatSolrResult (solrBody,postBody)
+{
+        var migrosResp = {};
+        var solrdata = JSON.parse(solrBody);
+        var solrDocs = solrdata.response.docs;
+        migrosResp['totalFound'] = solrdata.response.numFound;
+        var docs = new Array();
+        var flist = rankingProcess.getFL();
+           
+        var custsegmentid = postBody['customerSegment'];
+        var customerid = postBody["customerId"];
+        var storeid = postBody["store"];
+        
+        for (j = 0; j < solrDocs.length; j++) {
+            var row = {};
+            docs[j] = {};
+            for (k in flist){
+                var field = flist[k];
+                var fieldName = field.replace(/SEGMENTID/g,custsegmentid).replace(/STOREID/g,storeid).replace(/:.*/g,"");
+                var fieldVal = solrDocs[j][fieldName];
+                if (fieldName === 'ProductMoreDetail'){
+                    fieldVal = fieldVal.replace(/\r\n|\n/g, '');
+                } 
+
+                var fieldName = fieldName.replace(/_[0-9]+/,""); 
+                row[fieldName] = fieldVal;
+            }
+            /*for (var prop  in row){
+                console.log (prop+":"+row[prop]);
+            }*/
+            
+            docs[j]['psi'] = row['PSIID'];
+            docs[j]['pmn'] = row['ProductModelName'];
+            docs[j]['calculatedPrice'] = row['Price'];
+            docs[j]['category'] = row['PathLevel2'];
+            docs[j]['brand'] = row['BrandName'];
+            docs[j]['unit'] = row['UnitSymbol'];
+            docs[j]['onStock'] = row['InStock'];
+            docs[j]['inPromotion']= row['InPromotion'];
+            docs[j]['myFavorites'] = row['myFavorites'];
+            docs[j]['myOldOrders'] = row['myOldOrders'];
+            docs[j]['migroskop'] = row['IsMigroskop'];
+            docs[j]['mcc'] = row['IsMCCProduct'];
+        } ;
+        
+        migrosResp.docs = docs;
+        var facets = findFacetingValues(solrdata,customerid,storeid,{});
+
+        var filters = new Array();
+        filters [0] = {k: "myFavorites", v: facets.CustomersFavourite.facetCount};
+        filters [1] = {k: "myOldOrders", v: facets.CustomersPurchased.facetCount};
+        filters [2] = {k: "inPromotion", v: facets.InPromotion.facetCount};
+        filters [3] = {k: "migroskop", v: facets.IsMigroskop.facetCount};
+        filters [4] = {k: "mcc", v: facets.IsMCCProduct.facetCount};
+
+        var categories = [];
+        /*
+        for (var prop in facets){
+            var facetVal = facets [prop];
+            console.log (prop+":"+facetVal.facetCount);
+            if (facetVal.constructor === Array){
+                for (var prop2 in facetVal){
+                    console.log (facetVal[prop2].facetValue+":"+facetVal[prop2].facetCount);
+                }
+            }
+        }
+        */
+    
+    
+        for (var j in facets.PathLevel2){
+            categories.push({"n": facets.PathLevel2[j].facetValue, c: facets.PathLevel2[j].facetCount});
+        }
+        filters[5] = {k:"categories",v:categories};
+
+        var brands = [];
+        for (var j in facets.BrandName){
+            brands.push({"n": facets.BrandName[j].facetValue, c: facets.BrandName[j].facetCount});
+        }
+        filters[6] = {k:"brands",v:brands};
+
+        var units = [];
+        for (var j in facets.UnitSymbol){
+            units.push({"n": facets.UnitSymbol[j].facetValue, c: facets.UnitSymbol[j].facetCount});
+        }
+        filters[7] = {k:"units",v:units};
+
+        var properties = [];
+        for (var j in facets.ProductProperty){
+            properties.push({"n": facets.ProductProperty[j].facetValue, c: facets.ProductProperty[j].facetCount});
+         }
+        filters[8] = {k:"productProperty",v:properties};
+
+        migrosResp.filters = filters;
+        return migrosResp;
+    
+};
+
+function handlePostSolrRequest(inresponse, request) {
+    
+    console.log("Request handler 'handlePostSolrRequest' was called for " + request.url); 
+    var body = '';
+    request.on('data', function (data)
+    {
+        body += data;
+    });
+    request.on('end', function ()
+    {
+        console.log(body);  
+        var postBody = JSON.parse(body);
+        var solrURL = rankingProcess.handlePostSolrRequest (postBody);
+       
+        requestmod(solrURL, function (error, response, solrBody) {
+            console.log ("SOLR response:"+solrBody);
+            var reformattedResult = reformatSolrResult(solrBody,postBody);
+            inresponse.writeHead(200, { 'Content-Type': 'application/json' });
+            inresponse.write(JSON.stringify(reformattedResult));
+            inresponse.end(); 
+        }); 
+    });
 }
 
 function start(response) {
@@ -301,11 +506,12 @@ function css(response, request) {
 
     });
 
-}
+} 
 
 exports.start = start;
 exports.arabul = solrdata;
 exports.solrdata = solrdata;
+exports.handlePostSolrRequest=handlePostSolrRequest;
 exports.css = css;
 exports.test=test;
 
