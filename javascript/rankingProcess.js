@@ -743,7 +743,7 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     var pfqfOnlyQuery = preparePFQFQuery(localRankOrder);
  
     queryKeyword = encodeURIComponent(queryKeyword);
-    var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid) + ",score";
+    var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid).replace(/CUSTOMERID/g,customerid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
     var solrURL = "q=StoreID:" + storeid + fPair+" AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&" + sortQuery + "&" + pfqfOnlyQuery + "&" + extraOpts;
     solrURL = solrURL + "&" + faceFields + "&" + hlPars;
