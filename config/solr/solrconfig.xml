@@ -551,9 +551,9 @@
          this cache will not be autowarmed.  
       -->
     <documentCache class="solr.LRUCache"
-                   size="512"
-                   initialSize="512"
-                   autowarmCount="0"/>
+                   size="40000"
+                   initialSize="40000"
+                   autowarmCount="40000"/>
     
     <!-- custom cache currently used by block join --> 
     <cache name="perSegFilter"
@@ -838,6 +838,16 @@
        of SearchComponents (see below) and supports distributed
        queries across multiple shards
     -->
+<requestHandler name="/myselect2" class="solr.SearchHandler">
+
+   <lst name="defaults">
+       <str name="echoParams">explicit</str>
+       <int name="rows">200</int>
+       <str name="defType">edismax</str>
+       <str name="df">cat</str>
+   </lst>
+</requestHandler>
+
   <requestHandler name="/myselect" class="solr.SearchHandler">
 
    <lst name="defaults">
@@ -1560,20 +1570,26 @@
             <str name="indent">false</str>
             <str name="defType">edismax</str>
             <str name="rows">100</str>
-            <str name="fl">suggest_ngram</str>
-            <str name="qf">suggest^1 suggest_ngram^100</str>
-            
+            <str name="fl">suggest_ngram,suggest_ngram_tr,score</str>
+            <str name="qf">suggest^1 suggest_ngram^100 suggest_ngram_tr^100</str>
+             
             <str name="hl">true</str>
   	    <str name="hl.useFastVectorHighlighter">on</str>
-            <!-- <str name="hl.highlightMultiTerm">on</str> -->
-	    <str name="hl.fl">suggest_ngram</str>
-	    <str name="hl.encoder">html</str>
+            <str name="hl.encoder">html</str>
 	    <str name="hl.simple.pre">&lt;b&gt;</str>
 	    <str name="hl.simple.post">&lt;/b&gt;</str>
 
+            <!-- <str name="hl.highlightMultiTerm">on</str> -->
+	    <str name="hl.fl">suggest_ngram</str>
 	    <str name="f.suggest_ngram.hl.fragsize">30</str>
 	    <str name="f.suggest_ngram.hl.snippets">3</str>
 	    <str name="f.suggest_ngram.hl.alternateField">suggest_ngram</str>
+
+	    <str name="hl.fl">suggest_ngram_tr</str>
+	    <str name="f.suggest_ngram_tr.hl.fragsize">30</str>
+	    <str name="f.suggest_ngram_tr.hl.snippets">3</str>
+	    <str name="f.suggest_ngram_tr.hl.alternateField">suggest_ngram_tr</str>
+
         </lst>
     </requestHandler> 
 
