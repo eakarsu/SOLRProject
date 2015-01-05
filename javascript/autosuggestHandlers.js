@@ -11,21 +11,22 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = 'localhost';
+var host = '192.168.191.141';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsTRMorphFullProduction4/suggest_topic?q=';
+
 var basepath = "/arabul?";
 var gradeWindowLen = 5; 
 var reRankDocs = 5000;
 var reRankWeight = 1000;
 var maxCount = 5;
+var rankingProcess = require("./rankingProcess");
 
-function getSuggestTopics(response, body, query, requesturl,solrURL) {
+function getSuggestTopics2(response, body, query, requesturl,solrURL) {
    
             
     var solrdata = JSON.parse(body);
     var highlighting = solrdata.highlighting;
-   
+      
     var counter = 0;
     var topics  = [];
     var pmnames = [];
@@ -68,12 +69,83 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     response.end();
 };
 
+function getSuggestTopics(response, body, query, requesturl,solrURL) {
+    
+    var customerid = query.customerid;
+    var storeid = query.storeid;
+    var custsegmentid = query.custsegmentid;
+    var discountlevel = query.discountlevel;
+    var showsolrreq = query.showsolrreq;
+    
+    var solrdata = JSON.parse(body);
+    var highlighting = solrdata.highlighting;
+      
+    var counter = 0;
+    var topics  = [];
+    var pmnames = [];
+    patternArray = [];
+    var tries = 0;
+    for (var id in highlighting) {
+        tries++;
+        if (highlighting.hasOwnProperty(id)) {
+            var origvalue = highlighting[id].suggest_ngram[0];
+            var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
+            if (pattern !== null){
+                pattern = pattern.join(" ").replace(/<em>|<\/em>/g,"");
+            }else{
+                continue;
+            }
+            if (pattern !== null){
+                var index = patternArray.indexOf(pattern);
+                if (index < 0 && counter < maxCount){ 
+                    patternArray.push(pattern);
+                    var triple2 = {id:id+1,value:pattern,label:pattern}; 
+                    topics.push(triple2);
+                    counter++;
+                }
+                if (counter === maxCount){
+                    break;
+                }
+            }
+        }
+    }
+    console.log("Tried count="+tries);
+    
+    counter = 0;
+     for (var id in highlighting) {
+        if (highlighting.hasOwnProperty(id)) {
+            var origvalue = highlighting[id].suggest_ngram[0];
+            var value = origvalue.replace(/<em>|<\/em>/g,"");
+            var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
+            label = label.replace(/<\/em>/g,"</span>");
+            if (counter < maxCount){ 
+                var triple1 = {id:id,value:value,label:label}; 
+                pmnames.push(triple1); 
+                counter++;
+            }
+            if (counter === maxCount){
+                break;
+            }
+        }
+    }
+    
+    var triple = {id:id,value:value,label:"-------------------------------------"}; 
+    topics.push(triple); 
+    topics = topics.concat(pmnames);
+    
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.write(JSON.stringify(topics));
+    response.end();
+};
+
 function autosuggest(presponse, request) {
     console.log("Request handler 'autosuggest' was called for " + request.url);
     var queryData = url.parse(request.url, true).query;
     var term = encodeURIComponent(queryData.term);
      
-    var solrURL = "http://" + host + ":" + port + solrpath+term;
+    var solrURL = rankingProcess.prepareSuggestQuery(request);
+    console.log("Autosuggest url ext:"+solrURL);
+       
     requestmod(solrURL, function (error, response, body) {
         getSuggestTopics(presponse, body, queryData, request.url,solrURL);
 

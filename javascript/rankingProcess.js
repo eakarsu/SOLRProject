@@ -20,7 +20,8 @@ var swig = require('swig');
 var host = '192.168.191.141';
 //var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsTRMorphFullProduction4/myselect?';
+var solrpath = '/migrossolr/ProductsTRMorphFullProduction4Suggest/myselect?';
+var solrpathSuggest = '/migrossolr/ProductsTRMorphFullProduction4Suggest/suggest_topic?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
 var reRankDocs = 5000;
@@ -492,6 +493,23 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
     return result;
 }
 
+function prepareBFExpression2Suggest(localRankOrder, customerid, searchKeyword)
+{
+  
+    var sortExpr = "FIELDNAME^";
+    var sortExpr2 = "product(map(termfreq(FIELDNAME,FIELDVALUE),1,1,1,0),CONST)^";
+ 
+    allSortExprs = [];
+    var sortedRankOrder = sortObject(localRankOrder);
+
+    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid);
+
+    var result = "bf=" + allSortExprs.join(" ");
+
+    return result;
+}
+
+
 function prepareBQOnlyQuery2(localRankOrder, customerid, searchKeyword)
 {
     /**
@@ -750,8 +768,27 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
 
     return solrURL;
 
-}
-;
+};
+
+function prepareSuggestQueryExt(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword)
+{
+    var localRankOrder = {};
+    for (var prop in rankOrder) {
+        localRankOrder[prop] = rankOrder[prop];
+    }
+
+    adjustRankOrder(localRankOrder, storeid, custsegmentid, discountPrefLev);
+
+    //debuggin bf parameters for now with boosting instead of sorting */
+    //var sortQuery = prepareSortExpression2(localRankOrder,customerid,queryKeyword);
+    var sortQuery = prepareBFExpression2Suggest(localRankOrder, customerid, queryKeyword);
+ 
+    queryKeyword = encodeURIComponent(queryKeyword);
+    var solrURL = "q=" + queryKeyword+"&" + sortQuery ;
+
+    return solrURL;
+
+}; 
 
 function prepareBrowseQuery(query)
 {
@@ -1027,6 +1064,34 @@ function prepareBQOnlySOLRQuery2(request)
     return solrURL;
 };
 
+function prepareSuggestQuery(request)
+{
+ 
+    var query = url.parse(request.url, true).query;
+    var start = query.start;
+    var queryKeyword = query.q;
+    var customerid = query.customerid;
+    var storeid = query.storeid;
+    var custsegmentid = query.custsegmentid;
+    var discountlevel = query.discountlevel;
+    var showsolrreq = query.showsolrreq;
+    
+    console.log("prepareSuggestQuery:Received URL parameters from url=" + request.url + " q=" + queryKeyword +
+            " storeid=" + storeid + " customerid=" + customerid + " custsegmentid=" +
+            custsegmentid + " discountlevel=" + discountlevel + " start=" + start + " showsolrreq=" + showsolrreq);
+
+    if (typeof start === 'undefined') {
+        start = 0;
+        console.log("setting start to 0");
+    }
+
+    var solrQuery = prepareSuggestQueryExt(customerid, storeid, discountlevel, custsegmentid, queryKeyword);
+    var solrURL = "http://" + host + ":" + port + solrpathSuggest + solrQuery;
+    console.log("Sending solrURL=" + solrURL);
+    return solrURL;
+};
+
+
 /*
  * {
     "keyword": "elma",
@@ -1156,3 +1221,4 @@ exports.prepareBQOnlySOLRQuery2 = prepareBQOnlySOLRQuery2;
 exports.handlePostSolrRequest = handlePostSolrRequest;
 exports.handleSortSolrRequest = handleSortSolrRequest;
 exports.getFacetQueryParam = getFacetQueryParam;
+exports.prepareSuggestQuery = prepareSuggestQuery;

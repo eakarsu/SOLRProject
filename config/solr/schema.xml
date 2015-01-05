@@ -117,7 +117,7 @@
    <field name="_root_" type="string" indexed="true" stored="false"/>
     
    <!-- Migros variables here -->
-   <field name="ProductModelID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+      <field name="ProductModelID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
    <field name="ProductID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
    <field name="ProductModelName" type="text_tr" indexed="true" stored="true"/>
    <field name="Description" type="text_tr" indexed="true" stored="true"/>
@@ -135,32 +135,23 @@
    <field name="ProductProperty" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="CategoryPath" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="ProductFeatures" type="text_tr" indexed="true"  multiValued="true" stored="true"/>
-   <field name="UnitSymbol" type="text_tr" indexed="true" stored="true"  multiValued="false" />
+   <field name="UnitSymbol" type="string" indexed="true" stored="true"  multiValued="false" />
    <field name="UnitVal" type="float" indexed="true" stored="true"  multiValued="false" />
-   <field name="UnitExpr" type="text_tr" indexed="true" stored="true"  multiValued="false" />
+   <field name="UnitExpr" type="string" indexed="true" stored="true"  multiValued="false" />
    <field name="PathLevel2" type="notoktext_tr" indexed="true" stored="true" multiValued="true"/>	
-   <field name="ProductFeatures_TR" type="textExact" indexed="true"  multiValued="true" stored="false"/>
-   <field name="ProductMoreDetail_TR" type="textExact" indexed="true" stored="false"/>
-   <field name="SearchKeywordValue_TR" type="textExact" multiValued="true" indexed="true" stored="false"/>
-   <field name="ProductModelName_TR" type="textExact" indexed="true" stored="false"/>
-   <field name="Description_TR" type="textExact" indexed="true" stored="false"/>
-   <field name="BrandName" type="notoktext_tr" indexed="true" stored="true"/>
-   <field name="BrandName_TR" type="textExact" indexed="true" stored="false"/>  
+   <field name="ProductFeatures_TR" type="textExact" indexed="true"  multiValued="true" stored="true"/>
+   <field name="ProductMoreDetail_TR" type="textExact" indexed="true" stored="true"/>
+   <field name="SearchKeywordValue_TR" type="textExact" multiValued="true" indexed="true" stored="true"/>
+   <field name="ProductModelName_TR" type="textExact" indexed="true" stored="true"/>
+   <field name="Description_TR" type="textExact" indexed="true" stored="true"/>
+   <field name="BrandName" type="text_tr" indexed="true" stored="true"/>
+   <field name="BrandName_TR" type="textExact" indexed="true" stored="true"/>  
    <field name="IsMigroskop" type="int" indexed="true" stored="true"/>
- 
-   <!-- sortable field -->	
-   <field name="ProductModelName_Sort" type="alphaOnlySort" indexed="true" stored="false"/>
 
-   <!-- Facets -->
-   <field name="BrandName_Facet" type="notoktext_tr_facet" indexed="true" stored="false"/>
-   <field name="PathLevel2_Facet" type="notoktext_tr_facet" indexed="true" stored="false" multiValued="true"/>
-   <field name="ProductProperty_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
-   
    <!-- Price Fields. Triple price value per store -->  
    <dynamicField name="Price_*" type="float" indexed="true" multiValued="false" stored="true"/>
-   <dynamicField name="InStock_*" type="boolean" indexed="true" multiValued="false" stored="true"/>  
-   <dynamicField name="IsMCCProduct_*" type="boolean" indexed="true" multiValued="false" stored="true"/> 
-   <dynamicField name="PSIID_*" type="string" indexed="true" multiValued="false" stored="true"/>
+   <dynamicField name="Mcc_Price_*" type="float" indexed="true" multiValued="false" stored="true"/>  
+   <dynamicField name="Action_Price_*" type="float" indexed="true" multiValued="false" stored="true"/>
    <dynamicField name="InPromotion_*" type="boolean" indexed="true"  multiValued="false" stored="true"/>
    <dynamicField name="SegAmount_*" type="float" indexed="true" multiValued="false" stored="true"/>
    <dynamicField name="SegOrderCount_*" type="float" indexed="true"  multiValued="false" stored="true"/>
@@ -385,17 +376,11 @@
    <copyField source="ProductModelName_TR" dest="suggest"/>
 
    <copyField source="ProductModelName" dest="suggest_ngram"/>
-   <copyField source="ProductModelName" dest="ProductModelName_Sort"/>
    <copyField source="ProductModelName_TR" dest="suggest_ngram"/>
 
    <!-- Create a string version of author for faceting -->
    <copyField source="author" dest="author_s"/>
-	 
-   <!-- copy facet fields -->
-   <copyField source="BrandName" dest="BrandName_Facet"/>
-   <copyField source="PathLevel2" dest="PathLevel2_Facet"/>
-   <copyField source="ProductProperty" dest="ProductProperty_Facet"/>
- 
+	
    <!-- Above, multiple source fields are copied to the [text] field. 
 	  Another way to map multiple source fields to the same 
 	  destination field is to use the dynamic field syntax. 
@@ -1255,18 +1240,7 @@
    		 <filter class="org.apache.lucene.analysis.tr.TRMorphStemFilterFactory" 			strategy="minLength" />
   	</analyzer>
 
- 
-    </fieldType>
 
-<fieldType name="notoktext_tr_facet" class="solr.TextField" positionIncrementGap="100">
- 	 <analyzer>
-    		<tokenizer class="solr.KeywordTokenizerFactory"/>
-                <filter class="solr.ApostropheFilterFactory"/>
-   		 <!-- <filter class="solr.TurkishLowerCaseFilterFactory"/> -->
-   		 <filter class="org.apache.lucene.analysis.tr.TRMorphStemFilterFactory" 			strategy="minLength" />
-  	</analyzer>
-
- 
     </fieldType>
    
 	

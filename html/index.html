@@ -73,13 +73,33 @@
 
             $(function () {
                 $("#q").autocomplete({
-                    source: "/autosuggest",
-                    minLength: 2,
-                    select: function (event, ui) {
+                    /*source: "/autosuggest?storeid="+document.getElementById('storeid').value+
+                            "&customerid="+document.getElementById('customerid').value +
+                            "&custsegmentid="+document.getElementById('custsegmentid').value+
+                            "&discountlevel="+document.getElementById('discountlevel').value,*/
+                    source: function( request, response ) {
+                            $.ajax({
+                                    url: "/autosuggest",
+                                    dataType: "jsonp",
+                                    data: {
+                                            q: request.term,
+                                            storeid:document.getElementById('storeid').value,
+                                            customerid:document.getElementById('customerid').value,
+                                            custsegmentid:document.getElementById('custsegmentid').value,
+                                            discountlevel:document.getElementById('discountlevel').value
+                                    },
+                                    success: function( data ) {
+                                            response( data );
+                                    },
+                                    dataType: "json"
+                            });
+                     },
 
+                    minLength: 2, 
+                    select: function (event, ui) {
                         $("#q").val(ui.item.value);
 
-                        //var url = ui.item.id;
+                         //var url = ui.item.id;
                         //if(url != '#') {
                         //    location.href = '/blog/' + url;
                         // }
