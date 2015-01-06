@@ -1,0 +1,20 @@
+structure csv2xml {
+type separated |
+output xml
+record record {
+  field CUSTOMER_ID
+  field INITIAL_REFERRER
+  field STREAM_ID
+  field TIME_STAMP
+  field REQUEST_URI
+  field QUERY_STRING
+}
+}
+output xml {
+file_header "<RECORDS>\n"
+data "<%n>%t</%n>\n"
+record_header "<%r>\n"
+record_trailer "</%r>\n"
+indent " "
+file_trailer "</RECORDS>\n"
+}

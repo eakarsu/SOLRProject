@@ -26,7 +26,7 @@ function getSuggestTopics2(response, body, query, requesturl,solrURL) {
             
     var solrdata = JSON.parse(body);
     var highlighting = solrdata.highlighting;
-      
+       
     var counter = 0;
     var topics  = [];
     var pmnames = [];
@@ -79,14 +79,18 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     
     var solrdata = JSON.parse(body);
     var highlighting = solrdata.highlighting;
-      
+    var docs = solrdata.response.docs;
+    var psiIDProp = "PSIID_"+storeid;
+    
     var counter = 0;
     var topics  = [];
     var pmnames = [];
     patternArray = [];
     var tries = 0;
+    var j = 0;
     for (var id in highlighting) {
         tries++;
+        j++;
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
             var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
@@ -98,8 +102,9 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
             if (pattern !== null){
                 var index = patternArray.indexOf(pattern);
                 if (index < 0 && counter < maxCount){ 
+                    var psi = docs[j][psiIDProp]; 
                     patternArray.push(pattern);
-                    var triple2 = {id:id+1,value:pattern,label:pattern}; 
+                    var triple2 = {id:psi,value:pattern,label:pattern}; 
                     topics.push(triple2);
                     counter++;
                 }

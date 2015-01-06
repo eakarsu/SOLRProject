@@ -20,6 +20,8 @@ var swig = require('swig');
 var host = '192.168.191.141';
 //var host = 'localhost';
 var port = '8080';
+//var solrpath = '/migrossolr/ProductsTRMorphFullProduction4/myselect?';
+//var solrpathSuggest = '/migrossolr/ProductsTRMorphFullProduction4/suggest_topic?';
 var solrpath = '/migrossolr/ProductsTRMorphFullProduction4Suggest/myselect?';
 var solrpathSuggest = '/migrossolr/ProductsTRMorphFullProduction4Suggest/suggest_topic?';
 var basepath = "/arabul?";
@@ -784,7 +786,7 @@ function prepareSuggestQueryExt(customerid, storeid, discountPrefLev, custsegmen
     var sortQuery = prepareBFExpression2Suggest(localRankOrder, customerid, queryKeyword);
  
     queryKeyword = encodeURIComponent(queryKeyword);
-    var solrURL = "q=" + queryKeyword+"&" + sortQuery ;
+    var solrURL = "q=" + queryKeyword+"&" + sortQuery+"&fl=PSIID_"+storeid;
 
     return solrURL;
 

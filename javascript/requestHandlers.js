@@ -354,7 +354,7 @@ function reformatSolrResult (solrBody,postBody)
         migrosResp['totalFound'] = solrdata.response.numFound;
         var docs = new Array();
         var flist = rankingProcess.getFL();
-           
+                 
         var custsegmentid = postBody['customerSegment'];
         var customerid = postBody["customerId"];
         var storeid = postBody["store"];
@@ -394,6 +394,16 @@ function reformatSolrResult (solrBody,postBody)
         migrosResp.docs = docs;
         var facets = findFacetingValues(solrdata,customerid,storeid,{});
 
+       // make default value of those to 0 : inPromotion, myOldOrders, migroskop 
+        if (typeof facets.CustomersPurchased.facetCount === 'undefined'){
+            facets.CustomersPurchased.facetCount = 0;
+        }
+        if (typeof facets.InPromotion.facetCount === 'undefined'){
+            facets.InPromotion.facetCount = 0;
+        }
+        if (typeof facets.IsMigroskop.facetCount === 'undefined'){
+            facets.IsMigroskop.facetCount = 0;
+        }
         var filters = new Array();
         filters [0] = {k: "myFavorites", v: facets.CustomersFavourite.facetCount};
         filters [1] = {k: "myOldOrders", v: facets.CustomersPurchased.facetCount};
@@ -436,7 +446,7 @@ function reformatSolrResult (solrBody,postBody)
         for (var j in facets.ProductProperty){
             properties.push({"n": facets.ProductProperty[j].facetValue, c: facets.ProductProperty[j].facetCount});
          }
-        filters[8] = {k:"productProperty",v:properties};
+        filters[8] = {k:"productProperties",v:properties};
 
         migrosResp.filters = filters;
         return migrosResp;
