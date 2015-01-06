@@ -1590,7 +1590,26 @@
 	    <str name="f.suggest_ngram_tr.hl.snippets">3</str>
 	    <str name="f.suggest_ngram_tr.hl.alternateField">suggest_ngram_tr</str>
 
+	
+<!-- Spell checking defaults -->
+       <str name="spellcheck">on</str>
+       <str name="spellcheck.extendedResults">false</str>       
+       <str name="spellcheck.count">10</str>
+       <str name="spellcheck.alternativeTermCount">2</str>
+       <str name="spellcheck.maxResultsForSuggest">5</str>       
+       <str name="spellcheck.collate">true</str>
+       <str name="spellcheck.collateExtendedResults">true</str>  
+       <str name="spellcheck.maxCollationTries">5</str>
+       <str name="spellcheck.maxCollations">5</str> 
+
+
         </lst>
+	 <!-- append spellchecking to our list of components -->
+     <arr name="last-components">
+       <str>spellcheck</str>
+     </arr>
+
+
     </requestHandler> 
 
  

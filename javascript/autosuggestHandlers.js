@@ -69,6 +69,18 @@ function getSuggestTopics2(response, body, query, requesturl,solrURL) {
     response.end();
 };
 
+function getSpellChecks (solrdata,topics)
+{
+    var spellcheck = solrdata.spellcheck.suggestions;
+    console.log ("Spellcheck count :"+spellcheck.length);
+    for (var j=2;j< spellcheck.length;j+=2){
+       var word = spellcheck[j+1][1]; 
+       console.log ("Spell check word="+word);
+       var triple2 = {id:j,value:word,label:word}; 
+       topics.push(triple2);
+    }
+};
+
 function getSuggestTopics(response, body, query, requesturl,solrURL) {
     
     var customerid = query.customerid;
@@ -135,6 +147,10 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
                 break;
             }
         }
+    }
+    
+    if (counter === 0){
+        getSpellChecks(solrdata,topics);
     }
     
     var triple = {id:id,value:value,label:"-------------------------------------"}; 
