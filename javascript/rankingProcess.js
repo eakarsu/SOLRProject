@@ -1121,7 +1121,6 @@ function prepareSuggestQuery(request)
 function handlePostSolrRequest(postBody)
 {
 
-    var start = 0;
     var queryKeyword = postBody["keyword"];
     var customerid = postBody["customerId"];
     var storeid = postBody["store"];
@@ -1130,7 +1129,9 @@ function handlePostSolrRequest(postBody)
     var showsolrreq = false;
 
     var facetQueryPair = getPostedFacetQueryParam(postBody);
-    
+    var start = postBody['offset'];
+    var rows = postBody['limit'];
+         
     console.log("Received URL parameters  q=" + queryKeyword +
             " storeid=" + storeid + " customerid=" + customerid + " custsegmentid=" +
             custsegmentid + " discountlevel=" + discountlevel + " start=" + start + " showsolrreq=" + showsolrreq);
@@ -1141,7 +1142,7 @@ function handlePostSolrRequest(postBody)
     }
 
     var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery+"&rows="+rows;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 }

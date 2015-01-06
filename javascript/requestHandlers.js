@@ -346,6 +346,12 @@ filters: [
         }
     ]
              */
+            /*
+             * "offset": 50,
+    "limit": 100,
+    "filterResultLimit": 5,
+*/
+
 function reformatSolrResult (solrBody,postBody)
 {
         var migrosResp = {};
@@ -359,7 +365,9 @@ function reformatSolrResult (solrBody,postBody)
         var customerid = postBody["customerId"];
         var storeid = postBody["store"];
         
-        for (j = 0; j < solrDocs.length; j++) {
+        var filterResultLimit = postBody['filterResultLimit'];
+        
+        for (j = 0; j < Math.min(solrDocs.length,filterResultLimit); j++) {
             var row = {};
             docs[j] = {};
             for (k in flist){

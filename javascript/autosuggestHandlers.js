@@ -117,14 +117,17 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     console.log("Tried count="+tries);
     
     counter = 0;
+    j = 0;
      for (var id in highlighting) {
+        j++;
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
             var value = origvalue.replace(/<em>|<\/em>/g,"");
             var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
             label = label.replace(/<\/em>/g,"</span>");
             if (counter < maxCount){ 
-                var triple1 = {id:id,value:value,label:label}; 
+                var psi = docs[j][psiIDProp]; 
+                var triple1 = {id:psi,value:value,label:label}; 
                 pmnames.push(triple1); 
                 counter++;
             }
