@@ -404,6 +404,9 @@ function reformatSolrResult (solrBody,postBody)
         if (typeof facets.IsMigroskop.facetCount === 'undefined'){
             facets.IsMigroskop.facetCount = 0;
         }
+        if (typeof facets.IsMCCProduct.facetCount === 'undefined'){
+            facets.IsMCCProduct.facetCount = 0;
+        }
         var filters = new Array();
         filters [0] = {k: "myFavorites", v: facets.CustomersFavourite.facetCount};
         filters [1] = {k: "myOldOrders", v: facets.CustomersPurchased.facetCount};
