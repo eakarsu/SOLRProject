@@ -367,7 +367,7 @@ function reformatSolrResult (solrBody,postBody)
         
         var filterResultLimit = postBody['filterResultLimit'];
         
-        for (j = 0; j < Math.min(solrDocs.length,filterResultLimit); j++) {
+        for (j = 0; j < solrDocs.length; j++) {
             var row = {};
             docs[j] = {};
             for (k in flist){
@@ -436,27 +436,27 @@ function reformatSolrResult (solrBody,postBody)
         */
     
     
-        for (var j in facets.PathLevel2){
+        for (var j=0;j<Math.min(facets.PathLevel2.length,filterResultLimit);j++){
             categories.push({"n": facets.PathLevel2[j].facetValue, c: facets.PathLevel2[j].facetCount});
         }
         filters[5] = {k:"categories",v:categories};
 
         var brands = [];
-        for (var j in facets.BrandName){
+        for (var j=0;j<Math.min(facets.BrandName.length,filterResultLimit);j++){
             brands.push({"n": facets.BrandName[j].facetValue, c: facets.BrandName[j].facetCount});
         }
         filters[6] = {k:"brands",v:brands};
 
         var units = [];
-        for (var j in facets.UnitSymbol){
+        for (var j=0;j<Math.min(facets.UnitSymbol.length,filterResultLimit);j++){
             units.push({"n": facets.UnitSymbol[j].facetValue, c: facets.UnitSymbol[j].facetCount});
         }
         filters[7] = {k:"units",v:units};
 
         var properties = [];
-        for (var j in facets.ProductProperty){
+        for (var j=0;j<Math.min(facets.ProductProperty.length,filterResultLimit);j++){
             properties.push({"n": facets.ProductProperty[j].facetValue, c: facets.ProductProperty[j].facetCount});
-         }
+        }
         filters[8] = {k:"productProperties",v:properties};
 
         migrosResp.filters = filters;
