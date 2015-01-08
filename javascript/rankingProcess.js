@@ -422,19 +422,17 @@ function getConstVal(index, sortedRankOrder, highestRank)
 
 }
 
-function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid)
+function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank)
 {
-    var highestRank = sortedRankOrder[sortedRankOrder.length - 1].value;
-
     for (var index in sortedRankOrder) {
         var field = sortedRankOrder[index].key;
         var rankLevel = sortedRankOrder[index].value;
-        var rankVal = Math.pow(4, (highestRank - rankLevel));
-        var nextRankVal = Math.pow(4, (highestRank - rankLevel + 1));
+        var rankVal = Math.pow(multiplier, (highestRank - rankLevel));
+        var nextRankVal = Math.pow(multiplier, (highestRank - rankLevel + 1));
 
         //All numeric values here for all fields ending in "Grade". we need to scale the result to boost correctly
         if (field.match(/Grade/)) {
-            var newFieldName = "scale(" + field.replace("Grade", "") + "," + rankVal + "," + (nextRankVal - 4) + ")";
+            var newFieldName = "scale(" + field.replace("Grade", "") + "," + rankVal + "," + (nextRankVal - multiplier) + ")";
             var sortExprTemp = sortExpr.replace("FIELDNAME", newFieldName);
             sortExprTemp = sortExprTemp + rankVal;
             allSortExprs.push(sortExprTemp);
@@ -485,13 +483,14 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
         console.log(" sorted: " + sortedRankOrder[x].key + ":" + sortedRankOrder[x].value);
     }
     */
-   
-    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, exactSortExpr, exactSortExpr2, customerid);
-    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid);
+    var multiplier = 2;
+    var highestRank =  sortedRankOrder[sortedRankOrder.length - 1].value;
+    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, exactSortExpr, exactSortExpr2, customerid,multiplier,highestRank*2);
+    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank);
 
     qq = "qq=" + qq;
     exactqq = "exactqq=" + exactqq;
-    var result = "bf=" + exactMatchBF+allSortExprs.join(" ") + "&" + qq + "&" + exactqq;
+    var result = "bf=" + allSortExprs.join(" ") + "&" + qq + "&" + exactqq;
 
     return result;
 }
@@ -505,7 +504,9 @@ function prepareBFExpression2Suggest(localRankOrder, customerid, searchKeyword)
     allSortExprs = [];
     var sortedRankOrder = sortObject(localRankOrder);
 
-    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid);
+    var multiplier = 2;
+    var highestRank =  sortedRankOrder[sortedRankOrder.length - 1].value;
+    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank);
 
     var result = "bf=" + allSortExprs.join(" ");
 
