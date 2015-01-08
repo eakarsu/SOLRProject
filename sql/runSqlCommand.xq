@@ -9,14 +9,13 @@
       let $sqlStmt := fn:string-join($lines," ") 
 
        let $addBegin := file:append-text($outputfile,"<RECORDS>","UTF-8")
-       let $url := "jdbc:oracle:thin:kangurum/planetuc9@212.12.132.196:1521/kngdb"
+       let $url := "jdbc:oracle:thin:"
 (:
-       let $url := "jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST"
+       let $url := "jdbc:oracle:thin:"
 :)
        let $conn  := sql:connect($url)
-       let $res := sql:execute ($conn,$sqlStmt)
        let $list :=
-         for $rec in $res
+          for $rec in sql:execute ($conn,$sqlStmt)
            let $is :=
              for $line in $rec/*
                return
