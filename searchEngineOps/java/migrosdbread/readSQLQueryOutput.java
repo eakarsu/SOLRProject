@@ -174,10 +174,10 @@ public class readSQLQueryOutput {
 			Connection conn = null;
 			if (isTest)
 				conn = DriverManager
-				.getConnection("jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST");
+				.getConnection("jdbc:oracle:thin:");
 			else
 			 conn = DriverManager
-					.getConnection("jdbc:oracle:thin:kangurum/planetuc9@212.12.132.196:1521/kngdb");
+					.getConnection("jdbc:oracle:thin:");
 			
 			PreparedStatement psGetBlob = conn.prepareStatement(sqlStmt);
 			rst = psGetBlob.executeQuery(); 
