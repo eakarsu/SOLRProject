@@ -23,44 +23,44 @@ import oracle.jdbc.OracleResultSet;
 public class readBlob {
  
 	public final static String [][]TURKISH_CHARS = {
-	{"&frac12;","&#189;","½"},
-	{"&frac14;","&#188;","¼"},
-	{"&frac34;","&#190;","¾"},
-	{"&sup2;","&#178;","²"},
-	{"&Acirc;","&#194;","Â"},
-	{"&Atilde;","&#195;","Ã"},
-	{"&Ccedil;","&#199;","Ç"},
-	{"&Oacute;","&#211;","Ó"},
-	{"&Ouml;","&#214;","Ö"},
-	{"&Uuml;","&#220;","Ü"},
-	{"&aacute;","&#225;","á"},
-	{"&acirc;","&#226;","â"},
-	{"&acute;","&#180;","´"},
-	{"&auml;","&#228;","ä"},
-	{"&ccedil;","&#231;","ç"},
-	{"&curren;","&#164;","¤"},
-	{"&deg;","&#176;","°"},
-	{"&eacute;","&#233;","é"},
-	{"&ecirc;","&#234;","ê"},
-	{"&egrave;","&#232;","à"},
-	{"&euml;","&#235;","ë"},
-	{"&iacute;","&#237;","í"},
-	{"&icirc;","&#238;","î"},
-	{"&micro;","&#181;","µ"},
-	{"&middot;","&#183;","·"},
+	{"&frac12;","&#189;","Â½"},
+	{"&frac14;","&#188;","Â¼"},
+	{"&frac34;","&#190;","Â¾"},
+	{"&sup2;","&#178;","Â²"},
+	{"&Acirc;","&#194;","Ã‚"},
+	{"&Atilde;","&#195;","Ãƒ"},
+	{"&Ccedil;","&#199;","Ã‡"},
+	{"&Oacute;","&#211;","Ã“"},
+	{"&Ouml;","&#214;","Ã–"},
+	{"&Uuml;","&#220;","Ãœ"},
+	{"&aacute;","&#225;","Ã¡"},
+	{"&acirc;","&#226;","Ã¢"},
+	{"&acute;","&#180;","Â´"},
+	{"&auml;","&#228;","Ã¤"},
+	{"&ccedil;","&#231;","Ã§"},
+	{"&curren;","&#164;","Â¤"},
+	{"&deg;","&#176;","Â°"},
+	{"&eacute;","&#233;","Ã©"},
+	{"&ecirc;","&#234;","Ãª"},
+	{"&egrave;","&#232;","Ã "},
+	{"&euml;","&#235;","Ã«"},
+	{"&iacute;","&#237;","Ã­"},
+	{"&icirc;","&#238;","Ã®"},
+	{"&micro;","&#181;","Âµ"},
+	{"&middot;","&#183;","Â·"},
 	{"&nbsp;","&#160;"," "},
-	{"&oacute;","&#243;","ó"},
-	{"&ordm;","&#186;","º"},
-	{"&ouml;","&#246;","ö"},
-	{"&plusmn;","&#177;","±"},
-	{"&reg;","&#174;","®"},
+	{"&oacute;","&#243;","Ã³"},
+	{"&ordm;","&#186;","Âº"},
+	{"&ouml;","&#246;","Ã¶"},
+	{"&plusmn;","&#177;","Â±"},
+	{"&reg;","&#174;","Â®"},
 	{"&shy;","&#173;"," "},
-	{"&szlig;","&#223;","ß"},
-	{"&times;","&#215;","×"},
-	{"&uacute;","&#250;","ú"},
-	{"&ucirc;","&#251;","û"},
-	{"&uuml;","&#252;","ü"},
-	{"&yacute;","&#253;","ý"},
+	{"&szlig;","&#223;","ÃŸ"},
+	{"&times;","&#215;","Ã—"},
+	{"&uacute;","&#250;","Ãº"},
+	{"&ucirc;","&#251;","Ã»"},
+	{"&uuml;","&#252;","Ã¼"},
+	{"&yacute;","&#253;","Ã½"},
 	{"\"","&#34;","'"}
 };
 	public final static String [][]TURKISH_CHARS2 = {
@@ -262,10 +262,10 @@ public class readBlob {
 			Connection conn = null;
 			if (isTest)
 				conn = DriverManager
-				.getConnection("jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST");
+				.getConnection("jdbc:oracle:thin:");
 			else
 			 conn = DriverManager
-					.getConnection("jdbc:oracle:thin:kangurum/planetuc9@212.12.132.196:1521/kngdb");
+					.getConnection("jdbc:oracle:thin:");
 			 
 			String s = "select PRODUCT_MODEL_ID, HTML_CONTENT  from PRODUCT_MODEL_DETAIL where rownum <  "+count;
 			//String s = "select PRODUCT_MODEL_ID, HTML_CONTENT  from PRODUCT_MODEL_DETAIL  ";
