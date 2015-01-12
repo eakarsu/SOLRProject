@@ -1,24 +1,50 @@
-./post.sh solrinputfiles/batches/solrinput0.xml&
-./post.sh solrinputfiles/batches/solrinput1.xml&
-./post.sh solrinputfiles/batches/solrinput2.xml&
-./post.sh solrinputfiles/batches/solrinput3.xml&
-./post.sh solrinputfiles/batches/solrinput4.xml&
-./post.sh solrinputfiles/batches/solrinput5.xml&
-./post.sh solrinputfiles/batches/solrinput6.xml&
-./post.sh solrinputfiles/batches/solrinput7.xml&
-./post.sh solrinputfiles/batches/solrinput8.xml&
-./post.sh solrinputfiles/batches/solrinput9.xml&
-./post.sh solrinputfiles/batches/solrinput10.xml&
-./post.sh solrinputfiles/batches/solrinput11.xml&
-./post.sh solrinputfiles/batches/solrinput12.xml&
-./post.sh solrinputfiles/batches/solrinput13.xml&
-./post.sh solrinputfiles/batches/solrinput14.xml&
-./post.sh solrinputfiles/batches/solrinput15.xml&
-./post.sh solrinputfiles/batches/solrinput16.xml&
-./post.sh solrinputfiles/batches/solrinput17.xml&
-./post.sh solrinputfiles/batches/solrinput18.xml&
-./post.sh solrinputfiles/batches/solrinput19.xml&
-./post.sh solrinputfiles/batches/solrinput20.xml&
-./post.sh solrinputfiles/batches/solrinput21.xml&
-./post.sh solrinputfiles/batches/solrinput22.xml&
-./post.sh solrinputfiles/batches/solrinput23.xml&
+#!/bin/bash
+
+
+host=$1
+port=$2
+webpath=$3
+
+echo "We are looking for which core we will re-index now"
+corename=$($BASEX_HOME/bin/basex -bhost=$host -bport=$port -bwebpath=$webpath -bcoreName=ProductsCoreFirst xquery/getSwappedCoreName.xq 2>&1)
+
+echo "We picked core $corename and deleting al indexes and re-indexing onto it "
+
+echo "web are deleting all indexes in this core ${corename}"
+curl http://$host:$port/$webpath/$corename/update --data '<delete><query>*:*</query></delete>' -H 'Content-type:text/xml; charset=utf-8'
+curl http://$host:$port/$webpath/$corename/update --data '<commit/>' -H 'Content-type:text/xml; charset=utf-8'
+
+echo "We are indexing into this core ${corename}" 
+
+
+for i in {0..23}
+do
+   ./post.sh $host $webpath $corename solrinputfiles/batches/solrinput${i}.xml &
+done
+
+wait
+
+echo "We will RELAOD this code ${corename} now"
+
+result=$($BASEX_HOME/bin/basex -bhost=$host -bport=$port -bwebpath=$webpath -bcoreName=$corename xquery/executeReloadCommand.xq 2>&1)
+
+if [ $result -eq "0" ]
+then
+  echo "RELOADed core=${corename} executed successfully"
+else
+  echo "Faced problem in RELOADING core = ${corename}"
+fi
+
+echo "We are swapping core now"
+
+result=$($BASEX_HOME/bin/basex -bhost=$host -bport=$port -bwebpath=$webpath xquery/executeSwapCommand.xq 2>&1)
+
+if [ $result -eq "0" ]
+then
+  echo "SWAPped core=${corename} executed successfully"
+else
+  echo "Faced problem in SWAP operation"
+fi
+
+
+

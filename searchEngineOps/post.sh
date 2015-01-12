@@ -15,17 +15,15 @@
 # limitations under the License.
 
 FILES=$*
-#URL=http://localhost:8080/migrossolr/ProductsTRMorph/update
-URL=http://localhost:8080/migrossolr/CurrentProducts/update
+host=$1
+webpath=$2
+corename=$3
+URL=http://${host}:8080/${webpath}/${corename}/update
 
-for f in $FILES; do
+for f in "${@:4}"; do
   echo Posting file $f to $URL
   curl $URL --data-binary @$f -H 'Content-type:application/xml' 
-  echo
 done
-
-#send the commit command to make sure all the changes are flushed and visible
-#curl $URL --data-binary '<commit softCommit=true/>' -H 'Content-type:application/xml'
 
 curl "$URL?softCommit=true"
 echo
