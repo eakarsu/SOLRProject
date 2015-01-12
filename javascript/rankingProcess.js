@@ -20,10 +20,8 @@ var swig = require('swig');
 var host = '192.168.191.143';
 //var host = 'localhost';
 var port = '8080';
-//var solrpath = '/migrossolr/ProductsTRMorphFullProduction4/myselect?';
-//var solrpathSuggest = '/migrossolr/ProductsTRMorphFullProduction4/suggest_topic?';
-var solrpath = '/migrossolr/ProductsTRMorphFullProduction4Suggest/myselect?';
-var solrpathSuggest = '/migrossolr/ProductsTRMorphFullProduction4Suggest/suggest_topic?';
+var solrpath = '/migrossolr/ProductsCoreFirst/myselect?';
+var solrpathSuggest = '/migrossolr/ProductsCoreFirst/suggest_topic?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
 var reRankDocs = 5000;
@@ -106,8 +104,6 @@ var facetFields = [
     'IsMCCProduct_STOREID',
     'UnitSymbol',
     'IsMigroskop',
-    'CustomersPurchased',
-    'CustomersFavourite',
     'InPromotion_STOREID',
     'InStock_STOREID',
     'Price_STOREID',
@@ -120,6 +116,12 @@ var facetFields = [
     'BrandName_Facet',
     'ProductProperty_Facet'
 ];
+
+ var facetQueries = [
+     'exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
+     'exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
+ ];
+
 
 
 //InPromotion_STOREID with rankling  4,7 or 9 will be inserted based on the discountPrefLev - discount prefrence level-kampanya duyarliligi 
@@ -833,9 +835,13 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     //f.CustomersPurchased.facet.prefix will returns only faceting results for field CustomersPurchased that includes customerid
     //f.CustomersFavourite.facet.prefix will returns only faceting results for field CustomersFavourite that includes customerid
     var facetFieldsList = facetFields.join("&facet.field=");
-    var faceConfs = "facet=true&facet.mincount=1&facet.limit=100&facet.sort=count&f.CustomersPurchased.facet.prefix=" + customerid + "&f.CustomersFavourite.facet.prefix=" + customerid;
+    var allFaceQueries = facetQueries.join("&facet.query=").replace(/CUSTOMERID/g,customerid);
+    var faceConfs = "facet=true&facet.mincount=1&facet.limit=100&facet.sort=count";
     ;
     var faceFields = faceConfs + "&facet.field=" + facetFieldsList;
+    if ((typeof customerid !== 'undefined') && customerid !== ''){ 
+       faceFields = faceFields +"&facet.query="+allFaceQueries;
+    }
 
     faceFields = faceFields.replace(/STOREID/g, storeid);
     faceFields = faceFields.replace(/SEGMENTID/g, custsegmentid);

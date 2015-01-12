@@ -48,31 +48,38 @@ function findFacetingValues (solrdata,customerid,storeid,query)
      */    
     var facetQueryUrlInit = rankingProcess.prepareBrowseQuery(query);
     var facets = {};
+       
+     //Favori urunlerim veya eski siparislerim grubu
+    if (typeof solrdata.facet_counts.facet_queries !== 'undefined'){
+        var facetQueriesData = solrdata.facet_counts.facet_queries;
+        for (var prop in facetQueriesData){
+            var facetQueryUrl = facetQueryUrlInit;
+            var facetName = "";
+            if (prop.match(/CustomersFavourite/) ){
+                facetName = "CustomersFavourite";
+            }else if (prop.match(/CustomersPurchased/)){
+                facetName = "CustomersPurchased";
+            }
+            if (facetName.length > 0){
+                var facetCount = facetQueriesData[prop];
+                facetQueryUrl = facetQueryUrl+ facetName+"="+customerid;
+                facets[facetName] = {facetCount:facetCount,facetQueryUrl:facetQueryUrl};
+                console.log ("Aded facet query results : facetName="+facetName+":"+facetCount+": facetURL:"+facetQueryUrl);
+            }        
+         }
+    }
+    
     var facetFieldsData = solrdata.facet_counts.facet_fields;
     for (var facetName in facetFieldsData){
         var facetQueryUrl = facetQueryUrlInit;
         
-         var facetVals = facetFieldsData[facetName];
-         var origFacetName = facetName;
-         facetName = facetName.replace(/_.*/,"");
-         //console.log("Facet name:"+origFacetName+":"+facetVals.length);
-         /**
-            "CustomersPurchased":[ "852708",4],
-            "CustomersFavourite":[],
-         */
-        //Favori urunlerim veya eski siparislerim grubu
+        var facetVals = facetFieldsData[facetName];
+        facetName = facetName.replace(/_.*/,"");
+         
         var facetCount = 0;
-        if (facetName.match(/CustomersFavourite|CustomersPurchased/)){
-            if (facetVals.length === 1 ){
-                facetCount = facetVals[1];
-            }else{
-                facetCount = 0;
-            }
-            facetQueryUrl = facetQueryUrl+ facetName+"="+customerid;
-            facets[facetName] = {facetCount:facetCount,facetQueryUrl:facetQueryUrl};
-        }
+        
         //kampanyali urunler,migroskop urunleri veya money club indirimli urunler
-        else if (facetName.match(/InPromotion|IsMigroskop|IsMCCProduct/)){
+        if (facetName.match(/InPromotion|IsMigroskop|IsMCCProduct/)){
             facetCount = facetVals[3];
             if (facetName.match(/IsMigroskop/)){
                 facetQueryUrl = facetQueryUrl+facetName+"=1";
