@@ -1,6 +1,6 @@
 #!/bin/bash
 ## declare an array variable
-declare -a array=("Brands" "Customers" "Favorites" "Features" "Path" "Products" "Properties" "CRM" "PSI")
+declare -a array=("Brands" "Customers" "Favorites" "Features" "Path" "Products" "Properties" "PSI")
 
 # get length of an array
 arraylength=${#array[@]}

@@ -12,7 +12,6 @@ $BASEX_HOME/bin/basexclient -p1984 -Padmin -Uadmin << EOF
     CREATE DB CoreProductInfo $ROOT/Products0.sql.xml
     CREATE DB Properties $ROOT/Properties0.sql.xml
     CREATE DB PSI $ROOT/PSI0.sql.xml
-    CREATE DB CRM $ROOT/CRM0.sql.xml
 
     SET PARSER csv
     SET CSVPARSER encoding=utf-8, header=false, separator=comma
