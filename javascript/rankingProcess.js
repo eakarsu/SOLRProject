@@ -20,12 +20,13 @@ var swig = require('swig');
 var host = '192.168.191.143';
 //var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsCoreFirst/myselect?';
-var solrpathSuggest = '/migrossolr/ProductsCoreFirst/suggest_topic?';
+var solrpath = '/migrossolr/ProductsCoreSecond/myselect?';
+var solrpathSuggest = '/migrossolr/ProductsCoreSecond/suggest_topic?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
 var reRankDocs = 5000;
 var reRankWeight = 1000;
+var campaignInfo = require("./campaignInfo");
 
 //InPromotion_STOREID with rankling  4,7 or 9 will be inserted based on the discountPrefLev - discount prefrence level-kampanya duyarliligi 
 //and all other adjusted
@@ -121,7 +122,6 @@ var facetFields = [
      'exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
      'exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
  ];
-
 
 
 //InPromotion_STOREID with rankling  4,7 or 9 will be inserted based on the discountPrefLev - discount prefrence level-kampanya duyarliligi 
@@ -426,12 +426,14 @@ function getConstVal(index, sortedRankOrder, highestRank)
 
 function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank)
 {
+    var promConstVal = 0;
     for (var index in sortedRankOrder) {
         var field = sortedRankOrder[index].key;
         var rankLevel = sortedRankOrder[index].value;
         var rankVal = Math.pow(multiplier, (highestRank - rankLevel));
         var nextRankVal = Math.pow(multiplier, (highestRank - rankLevel + 1));
-
+        promConstVal = Math.max(nextRankVal,promConstVal);
+        
         //All numeric values here for all fields ending in "Grade". we need to scale the result to boost correctly
         if (field.match(/Grade/)) {
             var newFieldName = "scale(" + field.replace("Grade", "") + "," + rankVal + "," + (nextRankVal - multiplier) + ")";
@@ -440,7 +442,8 @@ function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, s
             allSortExprs.push(sortExprTemp);
         } else if (field.match(/InPromotion/)) {
             var constVal = getConstVal(index, sortedRankOrder, highestRank);
-
+            promConstVal = Math.max(constVal,promConstVal);
+            
             var sortExprTemp = sortExpr2.replace("FIELDNAME", field).replace("CONST", constVal);
             sortExprTemp = sortExprTemp.replace("FIELDVALUE", "true");
             sortExprTemp = sortExprTemp + rankVal;
@@ -448,12 +451,14 @@ function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, s
         }
         else if (field.match(/Customers/) && ((typeof customerid !== 'undefined') && customerid !== "")) {
             var constVal = getConstVal(index, sortedRankOrder, highestRank);
+            promConstVal = Math.max(constVal,promConstVal);
             var sortExprTemp = sortExpr2.replace("FIELDNAME", field).replace("CONST", constVal);
             sortExprTemp = sortExprTemp.replace("FIELDVALUE", customerid);
             sortExprTemp = sortExprTemp + rankVal;
             allSortExprs.push(sortExprTemp);
         }
     }
+    return multiplier*promConstVal;
 }
 ;
 
@@ -472,7 +477,6 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
     var sortExpr2 = "product(map(and(termfreq(FIELDNAME,FIELDVALUE),exists($qq)),1,1,1,0),CONST)^";
     var exactSortExpr = "map(exists($exactqq),1,1,FIELDNAME,0)^";
     var exactSortExpr2 = "product(map(and(termfreq(FIELDNAME,FIELDVALUE),exists($exactqq)),1,1,1,0),CONST)^";
-    var exactMatchBF = "map(exists($exactqq),1,1,1,0)^130000 ";
     
     searchKeywordEncoded = encodeURIComponent(searchKeyword);
     exactqq = exactqq.replace(/KEYWORD/g, searchKeywordEncoded);
@@ -485,14 +489,25 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
         console.log(" sorted: " + sortedRankOrder[x].key + ":" + sortedRankOrder[x].value);
     }
     */
+    var exactMatchMultiplier = campaignInfo.getExactMatchMultiplier ();
+     
     var multiplier = 2;
     var highestRank =  sortedRankOrder[sortedRankOrder.length - 1].value;
-    prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, exactSortExpr, exactSortExpr2, customerid,multiplier,highestRank*2);
+    var promMaxRankVal = prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, exactSortExpr, exactSortExpr2, customerid,multiplier,highestRank*exactMatchMultiplier ); // *2);
     prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank);
 
+    //Check keyword in campaign
+    var campaignQueryInfo = campaignInfo.getForCampaignQueryInfo (searchKeyword,multiplier,highestRank,promMaxRankVal);
+    var campExpr = "";
+    var campQuery = "";
+    if (campaignQueryInfo.length > 0){
+        campExpr = campaignQueryInfo[0]+" ";
+        campQuery = "&"+campaignQueryInfo[1];
+    }
+    
     qq = "qq=" + qq;
     exactqq = "exactqq=" + exactqq;
-    var result = "bf=" + allSortExprs.join(" ") + "&" + qq + "&" + exactqq;
+    var result = "bf=" + campExpr+ allSortExprs.join(" ") + "&" + qq + "&" + exactqq+campQuery;
 
     return result;
 }
@@ -729,7 +744,7 @@ function prepareOnlyBQOnlyQueryExt(customerid, storeid, discountPrefLev, custseg
 (units[0] | units[1] | ...) AND
 (productProperties[0] | productProperties[1] | .....)
  */
-function makeFilterBooleanExpr (facetList)
+function makeFilterBooleanExpr (facetList,customerid)
 {
     var resultFilterCondExpr = [];
     var custBucket = [];
@@ -764,8 +779,17 @@ function makeFilterBooleanExpr (facetList)
                 propBucket.push(prop+":\""+encodeURIComponent(facetVal[inprop])+"\"");
             }
         }
-        else{
-               console.log ("Adding to cust bucket");
+        //CustomersFavourite ve CustomersPurchased 
+        else if (prop === 'myOldOrders' && facetVal){
+            console.log ("Adding CustomersPurchased:"+customerid+" for myOldOrders");
+            custBucket.push("CustomersPurchased:"+customerid);
+        }
+        else if (prop === 'myFavorites' && facetVal){
+            console.log ("Adding CustomersFavourite:"+customerid+" for myFavorites");
+            custBucket.push("CustomersFavourite:"+customerid);
+        }
+        else if (!prop.match(/myOldOrders|myFavorites/)){   
+            console.log ("Adding to cust bucket");
             custBucket.push(prop+":"+encodeURIComponent(facetVal));
         }
     }
@@ -817,7 +841,7 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
 {
    
    //calculate facet boolean expression
-    var fPair = makeFilterBooleanExpr (facetList);
+    var fPair = makeFilterBooleanExpr (facetList,customerid);
    
     var hlPars = "hl=true&hl.fl=ProductModelName&hl.encoder=html&hl.simple.pre=<b>&hl.simple.post=</b>&f.ProductModelName.hl.fragsize=30&f.ProductModelName.hl.snippets=3&f.ProductModelName.hl.alternateField=ProductModelName";
     // 
@@ -1083,15 +1107,22 @@ function getPostedFacetQueryParam(postBody)
         }else if (filters[j]["k"] === "units") {
             facetList['UnitSymbol'] =  filters[j]["v"];;
         }else  if (filters[j]["k"] === "migroskop") {
-            facetList['IsMigroskop'] = filters[j]["v"];;
+            console.log ("getPostedFacetQueryParam:migroskop:"+filters[j]["v"]);
+            facetList['IsMigroskop'] = filters[j]["v"];
+             if (facetList['IsMigroskop'] ){
+                facetList['IsMigroskop'] = 1;
+            }else if (!facetList['IsMigroskop']){
+                facetList['IsMigroskop'] = 0;
+            }
+            console.log ("getPostedFacetQueryParam:migroskop:"+facetList['IsMigroskop']);
         }else  if (filters[j]["k"] === "brands") {
             facetList['BrandName'] = filters[j]["v"];
         }else  if (filters[j]["k"] === "categories") {
             facetList['PathLevel2'] = filters[j]["v"];
         }else  if (filters[j]["k"] === "myOldOrders") {
-            facetList['CustomersPurchased'] = filters[j]["v"];         
+            facetList['myOldOrders'] = filters[j]["v"];         
         }else  if (filters[j]["k"] === "myFavorites") {
-            facetList['CustomersFavourite'] = filters[j]["v"];
+            facetList['myFavorites'] = filters[j]["v"];
         } else if (filters[j]["k"] === "inPromotion") {
             facetList[isProm] = filters[j]["v"];
         }else  if (filters[j]["k"] === "productProperties") {

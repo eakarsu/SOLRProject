@@ -23,6 +23,7 @@ var host = 'localhost';
 var port = '8080';
 var path = '/migrossolr/ProductsTRMorphTestIst/select?wt=json&indent=true';
 var rankingProcess = require("./rankingProcess");
+var campaignInfo = require("./campaignInfo");
 
 function test ()
 {
@@ -129,12 +130,20 @@ function setupResults(body,storeid,custsegmentid,query) {
     var start = solrdata.response.start;
     var highs = solrdata.highlighting;
     var responseHeader = solrdata.responseHeader;
-
+    var queryKeyword = query.q;
+    
     var rows = new Array();
     var flist = rankingProcess.getFL();
     
     var customerid = query.customerid;
     var facets = findFacetingValues(solrdata,customerid,storeid,query);
+    
+    //swap first and third value if keyword macthes to a campaign
+    if (campaignInfo.isInCampaign(queryKeyword) && docs.length >= 3 ){
+        var temp = docs[2];
+        docs[2] = docs[0];
+        docs[0] = temp;
+    }
     
     for (j = 0; j < docs.length; j++) {
         rows[j] = {};
