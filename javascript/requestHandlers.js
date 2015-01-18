@@ -81,15 +81,22 @@ function findFacetingValues (solrdata,customerid,storeid,query)
         
         //kampanyali urunler,migroskop urunleri veya money club indirimli urunler
         if (facetName.match(/InPromotion|IsMigroskop|IsMCCProduct/)){
-            facetCount = facetVals[3];
+            for (var fp in facetVals){
+                if (facetVals[fp] === "1" || facetVals[fp] === "true"){
+                    facetCount = facetVals[parseInt(fp)+1];
+                    break;
+                }
+            };
+                       
             if (facetName.match(/IsMigroskop/)){
                 facetQueryUrl = facetQueryUrl+facetName+"=1";
             }else{
                 facetQueryUrl = facetQueryUrl+facetName+"_"+storeid+"=true";
             }
             facets[facetName] = {facetCount:facetCount,facetQueryUrl:facetQueryUrl};
+            console.log ("Aded facet query results : facetName="+facetName+":"+facetCount+": facetURL:"+facetQueryUrl);
         }
-        else{
+        else{ 
             var array = [];
             for (var j=0;j<facetVals.length;j+=2){
                 var facetQueryUrl = facetQueryUrlInit;
@@ -401,6 +408,7 @@ function reformatSolrResult (solrBody,postBody)
                 console.log (prop+":"+row[prop]);
             }*/
             
+            
             docs[j]['psi'] = row['PSIID'];
             docs[j]['pmn'] = row['ProductModelName'];
             docs[j]['calculatedPrice'] = row['Price'];
@@ -418,6 +426,7 @@ function reformatSolrResult (solrBody,postBody)
         migrosResp.docs = docs;
         var facets = findFacetingValues(solrdata,customerid,storeid,{});
 
+        
        // make default value of those to 0 : inPromotion, myOldOrders, migroskop 
         if (typeof facets.CustomersPurchased.facetCount === 'undefined'){
             facets.CustomersPurchased.facetCount = 0;

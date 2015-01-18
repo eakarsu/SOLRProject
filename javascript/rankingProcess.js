@@ -115,7 +115,8 @@ var facetFields = [
     'OrderCount',
     'PathLevel2_Facet',
     'BrandName_Facet',
-    'ProductProperty_Facet'
+    'ProductProperty_Facet',
+    'IsInCampaign'
 ];
 
  var facetQueries = [
@@ -409,15 +410,15 @@ function prepareSortExpression2(localRankOrder, customerid, searchKeyword)
     return result;
 }
 
-function getConstVal(index, sortedRankOrder, highestRank)
-{
+function getConstVal(index, sortedRankOrder, highestRank,multiplier)
+{    
     var constVal = "1";
     for (var j = parseInt(index) + 1; j < sortedRankOrder.length; j++) {
         var field = sortedRankOrder[j].key;
         if (field.match(/Grade/)) {
             var localRankLevel = sortedRankOrder[j].value;
-            constVal = Math.pow(4, (highestRank - localRankLevel + 1)) + 4;
-            break;
+            constVal = Math.pow(4, (highestRank - localRankLevel + 1)) + multiplier;
+            break; 
         }
     }
     return constVal;
@@ -436,12 +437,12 @@ function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, s
         
         //All numeric values here for all fields ending in "Grade". we need to scale the result to boost correctly
         if (field.match(/Grade/)) {
-            var newFieldName = "scale(" + field.replace("Grade", "") + "," + rankVal + "," + (nextRankVal - multiplier) + ")";
+            var newFieldName = "scale(field(" + field.replace("Grade", "") + ")," + rankVal + "," + (nextRankVal - multiplier) + ")";
             var sortExprTemp = sortExpr.replace("FIELDNAME", newFieldName);
             sortExprTemp = sortExprTemp + rankVal;
             allSortExprs.push(sortExprTemp);
         } else if (field.match(/InPromotion/)) {
-            var constVal = getConstVal(index, sortedRankOrder, highestRank);
+            var constVal = getConstVal(index, sortedRankOrder, highestRank,multiplier);
             promConstVal = Math.max(constVal,promConstVal);
             
             var sortExprTemp = sortExpr2.replace("FIELDNAME", field).replace("CONST", constVal);
@@ -450,7 +451,7 @@ function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, s
             allSortExprs.push(sortExprTemp);
         }
         else if (field.match(/Customers/) && ((typeof customerid !== 'undefined') && customerid !== "")) {
-            var constVal = getConstVal(index, sortedRankOrder, highestRank);
+            var constVal = getConstVal(index, sortedRankOrder, highestRank,multiplier);
             promConstVal = Math.max(constVal,promConstVal);
             var sortExprTemp = sortExpr2.replace("FIELDNAME", field).replace("CONST", constVal);
             sortExprTemp = sortExprTemp.replace("FIELDVALUE", customerid);
@@ -485,13 +486,17 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
     allSortExprs = [];
     var sortedRankOrder = sortObject(localRankOrder);
 
-    /*for (x in sortedRankOrder) {
-        console.log(" sorted: " + sortedRankOrder[x].key + ":" + sortedRankOrder[x].value);
-    }
-    */
+    //debug
+    /*for (var j = 0; j < sortedRankOrder.length; j++) {
+        var field = sortedRankOrder[j].key;
+        var localRankLevel = sortedRankOrder[j].value;
+        console.log(field+":"+localRankLevel);
+    }*/
+    //debug
+      
     var exactMatchMultiplier = campaignInfo.getExactMatchMultiplier ();
      
-    var multiplier = 2;
+    var multiplier = 4;
     var highestRank =  sortedRankOrder[sortedRankOrder.length - 1].value;
     var promMaxRankVal = prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, exactSortExpr, exactSortExpr2, customerid,multiplier,highestRank*exactMatchMultiplier ); // *2);
     prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank);
@@ -837,9 +842,31 @@ function makeFilterBooleanExpr (facetList,customerid)
     
 };
 
+function addFacetingFields (storeid,customerid,custsegmentid)
+{
+     //Add facting fields
+    var facetFieldsList = facetFields.join("&facet.field=");
+    var allFaceQueries = facetQueries.join("&facet.query=").replace(/CUSTOMERID/g,customerid);
+    var faceConfs = "facet=true&facet.mincount=1&facet.limit=100&facet.sort=count";
+    ;
+    var faceFields = faceConfs + "&facet.field=" + facetFieldsList;
+    if ((typeof customerid !== 'undefined') && customerid !== ''){ 
+       faceFields = faceFields +"&facet.query="+allFaceQueries;
+    }
+
+    faceFields = faceFields.replace(/STOREID/g, storeid);
+    faceFields = faceFields.replace(/SEGMENTID/g, custsegmentid);
+    return faceFields;
+};
+
 function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword, start,facetList)
 {
    
+   //If camapin keyword, maket is smalle
+    if (campaignInfo.isInCampaign(queryKeyword)){
+        queryKeyword = queryKeyword.toLowerCase();
+    }
+    
    //calculate facet boolean expression
     var fPair = makeFilterBooleanExpr (facetList,customerid);
    
@@ -855,27 +882,14 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
 
     adjustRankOrder(localRankOrder, storeid, custsegmentid, discountPrefLev);
 
-    //Add facet.field=IsMigroskop after we add it to indexinf process
-    //f.CustomersPurchased.facet.prefix will returns only faceting results for field CustomersPurchased that includes customerid
-    //f.CustomersFavourite.facet.prefix will returns only faceting results for field CustomersFavourite that includes customerid
-    var facetFieldsList = facetFields.join("&facet.field=");
-    var allFaceQueries = facetQueries.join("&facet.query=").replace(/CUSTOMERID/g,customerid);
-    var faceConfs = "facet=true&facet.mincount=1&facet.limit=100&facet.sort=count";
-    ;
-    var faceFields = faceConfs + "&facet.field=" + facetFieldsList;
-    if ((typeof customerid !== 'undefined') && customerid !== ''){ 
-       faceFields = faceFields +"&facet.query="+allFaceQueries;
-    }
-
-    faceFields = faceFields.replace(/STOREID/g, storeid);
-    faceFields = faceFields.replace(/SEGMENTID/g, custsegmentid);
+    //Add facting fields
+    var faceFields = addFacetingFields (storeid,customerid,custsegmentid);
 
     //debuggin bf parameters for now with boosting instead of sorting */
     //var sortQuery = prepareSortExpression2(localRankOrder,customerid,queryKeyword);
     var sortQuery = prepareBFExpression2(localRankOrder, customerid, queryKeyword);
 
     var pfqfOnlyQuery = preparePFQFQuery(localRankOrder);
-  
   
     var localFlList = [];
     for (var x in flList){
@@ -1086,7 +1100,8 @@ function getFacetQueryParam(query)
         {"k": "inPromotion", "v": true},
         {"k": "migroskop", "v": true},
         {"k": "mcc", "v": true},
-        {"k": "categories", "v": ["hazır çocuk yemekleri", "biberonlar"]},
+        {"k": "categories", "v": ["hazır çocuk yemekleri", "bibe
+        ronlar"]},
         {"k": "brands", "v": ["milupa", "bebelac"]},
         {"k": "units", "v": ["kg", "gr"]},
         {"k": "productProperty", "v": ["?", "?", "?"]}
@@ -1276,31 +1291,18 @@ function handleSortSolrRequest(postBody)
 
 function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, start,sortkeyword,facetList)
 {
+    //calculate facet boolean expression
+   var fPair = makeFilterBooleanExpr (facetList,customerid);
+    
    if (sortkeyword.match(/Price/)){
         sortkeyword = sortkeyword.replace(" ","_"+storeid+" ");
    }else if (sortkeyword.match(/ProductModelName/)){
        sortkeyword = sortkeyword.replace(" ","_Sort ");
    }
    //facetVal.constructor === Array
-    var fPair = "";
-    for (var prop in facetList){
-        var facetVal = facetList[prop];
-        if (facetVal.constructor === Array){
-            for (var inprop in facetVal){
-                fPair = fPair.concat(" AND "+prop+":"+encodeURIComponent(facetVal[inprop]));
-            }
-        }else
-            fPair = fPair.concat(" AND "+prop+":"+encodeURIComponent(facetVal));
-    }
+   //Add facting fields
+    var faceFields = addFacetingFields (storeid,customerid,custsegmentid);
     
-    var facetFieldsList = facetFields.join("&facet.field=");
-    var faceConfs = "facet=true&facet.mincount=1&facet.limit=100&facet.sort=count&f.CustomersPurchased.facet.prefix=" + customerid + "&f.CustomersFavourite.facet.prefix=" + customerid;
-    ;
-    var faceFields = faceConfs + "&facet.field=" + facetFieldsList;
-
-    faceFields = faceFields.replace(/STOREID/g, storeid);
-    faceFields = faceFields.replace(/SEGMENTID/g, custsegmentid);
-
     queryKeyword = encodeURIComponent(queryKeyword);
     var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;

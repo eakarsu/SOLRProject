@@ -48,38 +48,65 @@ String.prototype.turkish = function () {
        "çay":
       {
         "dateRange": "",
-        "productIDs":["801989","110984","101832","112076","799654"]
+        "productIDs":["158015","424392","793835","793723","841537"]
       },
       "cay":
       {
         "dateRange": "",
-        "productIDs":["801989","110984","101832","112076","799654"]
+        "productIDs":["158015","424392","793835","793723","841537"]
+      },
+      
+        "pilic":
+      {
+        "dateRange": "",
+        "productIDs":["415527","213916","194767","213937","180149"]
       }
    }; 
       
    var exactMatchMultiplier = 2;
-    
+       
    function getExactMatchMultiplier ()
    {
        return exactMatchMultiplier;
    };
    
+    function whichSearchedWord (keyword)
+   {
+       var searchedWord = "";
+       keyword = keyword.toLowerCase();
+       var words = keyword.split(" ");
+       for (var k in words){
+          var nextWord = words[k];
+          var trkeyword = nextWord.turkish();
+          var isFound = ((typeof campaigns[nextWord] !== 'undefined') || (typeof campaigns[trkeyword] !== 'undefined')); 
+          if (isFound){
+              searchedWord = nextWord;
+          }
+       }
+       return searchedWord;
+   };
+   
    function isInCampaign (keyword)
    {
-       var trkeyword = keyword.turkish();
-       return ((typeof campaigns[keyword] !== 'undefined') || (typeof campaigns[trkeyword] !== 'undefined'));
+       var foundWord = whichSearchedWord(keyword);
+       return foundWord.length > 0;
    };
    
    function getProductIDs (keyword)
    {
-       var trkeyword = keyword.turkish();
-       var pids = [];
-       if (typeof campaigns[keyword] !== 'undefined'){ 
-         pids = campaigns[keyword]["productIDs"];
-       } else {
-         pids = campaigns[trkeyword]["productIDs"];
-       }
-       return  pids;
+       keyword = whichSearchedWord(keyword);
+       if (keyword.length > 0){
+            var trkeyword = keyword.turkish();
+            var pids = [];
+            if (typeof campaigns[keyword] !== 'undefined'){ 
+              pids = campaigns[keyword]["productIDs"];
+            } else {
+              pids = campaigns[trkeyword]["productIDs"];
+            }
+            return  pids;
+        }
+        else
+            return [];
    };
    
    function getForCampaignQueryInfo (searchKeyword,multiplier,highestRank,promMaxRankVal)
