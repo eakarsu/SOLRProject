@@ -145,6 +145,18 @@ declare function local:getSegmentInfo () as map(*)
   
 };
 
+declare function local:getAddCartMap () as map(*)
+{
+                let $mapAddCarts :=
+           map:new(for $record in fn:doc("CSstreamCartInfo")//AddedToCart
+                 let $pid := $record/ProductID/text()
+		 where $pid ne "" and fn:not(fn:empty($pid))
+                 group by $pid
+                 return map:entry($pid,fn:count($record)))
+
+      return $mapAddCarts
+};
+
 declare function local:getClicksMap () as map(*)
 {
                 let $mapClicks :=
@@ -373,6 +385,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
 {
         
         let $clickMap := local:getClicksMap ()
+	let $addCartMap := local:getAddCartMap ()
         
         let $priceMap := 
           map:new(
@@ -449,8 +462,9 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
                        let $nclicks := if (fn:empty($nclicks)) then () 
                                         else <field name="NumberOfClicks">{sum($nclicks)}</field> 
                        let $pidEntry := <PRODUCT_ID>{$psiPid}</PRODUCT_ID>                
+		       let $nAddCarts := <field name="NumberOfAddCarts">{map:get($addCartMap,$psiPid)}</field>
                        return 
-                         insert nodes ($nclicks,$priceTuples) into $accRecord
+                         insert nodes ($nclicks,$nAddCarts,$priceTuples) into $accRecord
               
 }; 
 
