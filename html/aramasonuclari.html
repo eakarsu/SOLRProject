@@ -285,8 +285,8 @@
 						<span class="arrow "></span>
 						</a>
 						<ul class="sub-menu">
-                                                     
-                                                        {% for record in facets.UnitSymbol %}
+                                                       
+                                                        {% for record in facets.UnitExpr %}
 							<li>
 								<a href="{{record['facetQueryUrl']}}">
 								<i class="icon-home"></i>
@@ -518,12 +518,13 @@
                         <table class="table table-striped table-condensed table-hover">
                             <thead>
                                 <tr>
-
+                                    <th>score</th>
                                     <th>ProductID</th>
                                     <th>ProductModelName</th>
                                     <th>SegAmount</th>
                                     <th>SegOrderCount</th>
                                     <th>NumberOfClicks</th>
+                                    <th>NumberOfAddCarts</th>
                                     <th>Amount</th>
                                     <th>OrderCount</th>
                                     <th>InPromotion</th>
@@ -535,10 +536,6 @@
                                     <th>BrandName</th>
 
                                     <th>PathLevel2</th>
-
-                                    <th>Description</th>
-                                    <th>ProductMoreDetail</th>
-
 
                                     <th>ProductFeatures</th>
                                     <th>UnitSymbol</th>
@@ -552,12 +549,14 @@
 
                             {% for record in records %}
                             <tr height="1em">
-
+                                <td>{{ record['score']|safe }}</td>
                                 <td>{{ record['ProductID']|safe }}</td>
                                 <td>{{ record['ProductModelName']|safe }}</td>
                                 <td>{{ record['SegAmount']|safe }}</td>
                                 <td>{{ record['SegOrderCount']|safe }}</td>
                                 <td>{{ record['NumberOfClicks']|safe }}</td>
+                                <td>{{ record['NumberOfAddCarts']|safe }}</td>
+                               
                                 <td>{{ record['Amount']|safe }}</td>
                                 <td>{{ record['OrderCount']|safe }}</td>
                                 <td>{{ record['InPromotion']|safe }}</td>
@@ -570,9 +569,7 @@
 
                                 <td>{{ record['PathLevel2']|safe }}</td>
 
-                                <td>{{ record['Description']|safe }}</td>
-                                <td>{{ record['ProductMoreDetail']|safe }}</td>
-
+                             
 
                                 <td>{{ record['ProductFeatures']|safe }}</td>
                                 <td>{{ record['UnitSymbol']|safe }}</td>

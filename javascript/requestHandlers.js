@@ -407,14 +407,14 @@ function reformatSolrResult (solrBody,postBody)
             /*for (var prop  in row){
                 console.log (prop+":"+row[prop]);
             }*/
-            
-            
+             
+             
             docs[j]['psi'] = row['PSIID'];
             docs[j]['pmn'] = row['ProductModelName'];
             docs[j]['calculatedPrice'] = row['Price'];
             docs[j]['category'] = row['PathLevel2'];
             docs[j]['brand'] = row['BrandName'];
-            docs[j]['unit'] = row['UnitSymbol'];
+            docs[j]['unit'] = row['UnitExpr'];//row['UnitSymbol'];
             docs[j]['onStock'] = row['InStock'];
             docs[j]['inPromotion']= row['InPromotion'];
             docs[j]['myFavorites'] = row['myFavorites'];
@@ -473,8 +473,11 @@ function reformatSolrResult (solrBody,postBody)
         filters[6] = {k:"brands",v:brands};
 
         var units = [];
-        for (var j=0;j<Math.min(facets.UnitSymbol.length,filterResultLimit);j++){
+        /*for (var j=0;j<Math.min(facets.UnitSymbol.length,filterResultLimit);j++){
             units.push({"n": facets.UnitSymbol[j].facetValue, c: facets.UnitSymbol[j].facetCount});
+        }*/
+        for (var j=0;j<Math.min(facets.UnitExpr.length,filterResultLimit);j++){
+            units.push({"n": facets.UnitExpr[j].facetValue, c: facets.UnitExpr[j].facetCount});
         }
         filters[7] = {k:"units",v:units};
 

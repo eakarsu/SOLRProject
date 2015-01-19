@@ -79,6 +79,8 @@ var flList = [
     'InStock_STOREID',
     'PSIID_STOREID',
     'InPromotion_STOREID',
+    'score',
+    'NumberOfAddCarts',
     'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
     'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
 ];
@@ -100,10 +102,11 @@ var qlList = [
     'Description_TR',
     'ProductProperty_TR'
 ];
-  
+   
 var facetFields = [
     'IsMCCProduct_STOREID',
     'UnitSymbol',
+    'UnitExpr',
     'IsMigroskop',
     'InPromotion_STOREID',
     'InStock_STOREID',
@@ -116,6 +119,7 @@ var facetFields = [
     'PathLevel2_Facet',
     'BrandName_Facet',
     'ProductProperty_Facet',
+    'UnitExpr_Facet',
     'IsInCampaign'
 ];
 
@@ -742,6 +746,104 @@ function prepareOnlyBQOnlyQueryExt(customerid, storeid, discountPrefLev, custseg
 }
 ;
 
+function makeOneBooleanSet (bucket,resultFilterCondExpr)
+{
+    var bexpr = bucket.join(" OR ");
+    if (bucket.length > 1){
+        resultFilterCondExpr.push("("+bexpr+")");
+    }else if (bucket.length === 1){
+        resultFilterCondExpr.push(bexpr);
+    }
+    
+};
+
+function makeOneBooleanSetTag (bucket,resultFilterCondExpr,label)
+{
+    var bexpr = bucket.join(" OR ");
+    if (bucket.length > 1){
+        bexpr = "("+bexpr+")";
+    }
+    
+    if (bexpr !== ""){
+        bexpr = "fq={!tag="+label+"}"+bexpr;
+        resultFilterCondExpr.push(bexpr);
+        for (x in bucket){
+            var prop = bucket[x].match(/.*:/g)[0];
+            prop = prop.replace(":","");
+            if (prop.match(/PathLevel2|BrandName|ProductProperty/)){
+                prop = prop+"_Facet";
+            }
+            var facetEx = "facet.field={!ex="+label+"}"+prop;
+            if (resultFilterCondExpr.indexOf(facetEx) < 0){
+                resultFilterCondExpr.push(facetEx);
+            }
+        }
+    }
+};
+
+function makeFilterBooleanExprTagExclude (facetList,customerid)
+{
+    var resultFilterCondExpr = [];
+    var custBucket = [];
+    var catBucket = [];
+    var brandBucket = [];
+    var unitBucket = [];
+    var propBucket = [];
+    
+    console.log("makeFilterBooleanExpr="+facetList);
+    for (var prop in facetList){
+        console.log("makeFilterBooleanExpr:prop:"+prop+":"+facetList[prop]);
+        var facetVal = facetList[prop];
+        if (facetVal.constructor === Array && prop === 'PathLevel2'){//categories
+            console.log ("Adding to pathleve bucket");
+            for (var inprop in facetVal){
+                console.log("CATGORY="+facetVal[inprop]);
+                catBucket.push(prop+":\""+encodeURIComponent(facetVal[inprop])+"\"");
+            }
+        }
+        else if (facetVal.constructor === Array && prop === 'BrandName'){ //brands
+            console.log ("Adding to brand bucket");
+            for (var inprop in facetVal){
+                brandBucket.push(prop+":\""+encodeURIComponent(facetVal[inprop])+"\"");
+            }
+        }
+        else if (facetVal.constructor === Array && prop === 'UnitExpr'){//units
+            console.log ("Adding to unitexpr bucket");
+            for (var inprop in facetVal){
+                unitBucket.push(prop+":"+encodeURIComponent(facetVal[inprop]));
+            }
+        }
+        else if (facetVal.constructor === Array && prop === 'ProductProperty'){//productProperties
+            console.log ("Adding to property bucket");
+            for (var inprop in facetVal){
+                propBucket.push(prop+":\""+encodeURIComponent(facetVal[inprop])+"\"");
+            }
+        }
+        //CustomersFavourite ve CustomersPurchased 
+        else if (prop === 'myOldOrders' && facetVal){
+            console.log ("Adding CustomersPurchased:"+customerid+" for myOldOrders");
+            custBucket.push("CustomersPurchased:"+customerid);
+        }
+        else if (prop === 'myFavorites' && facetVal){
+            console.log ("Adding CustomersFavourite:"+customerid+" for myFavorites");
+            custBucket.push("CustomersFavourite:"+customerid);
+        }
+        else if (!prop.match(/myOldOrders|myFavorites/)){   
+            console.log ("Adding to cust bucket");
+            custBucket.push(prop+":"+encodeURIComponent(facetVal));
+        }
+    }
+    
+    makeOneBooleanSetTag(custBucket,resultFilterCondExpr,"customer");
+    makeOneBooleanSetTag(catBucket,resultFilterCondExpr,"category");
+    makeOneBooleanSetTag(brandBucket,resultFilterCondExpr,"brand");
+    makeOneBooleanSetTag(unitBucket,resultFilterCondExpr,"unit");
+    makeOneBooleanSetTag(propBucket,resultFilterCondExpr,"property");
+    
+    return resultFilterCondExpr;
+    
+};
+
 /*
 (myFavorites | myOldOrders | inPromotion | migroskop | mcc ) AND 
 (categories[0] |  categories[1] | ....) AND
@@ -774,7 +876,7 @@ function makeFilterBooleanExpr (facetList,customerid)
                 brandBucket.push(prop+":\""+encodeURIComponent(facetVal[inprop])+"\"");
             }
         }
-        else if (facetVal.constructor === Array && prop === 'UnitSymbol'){//units
+        else if (facetVal.constructor === Array && prop === 'UnitExpr'){//units
             for (var inprop in facetVal){
                 unitBucket.push(prop+":"+encodeURIComponent(facetVal[inprop]));
             }
@@ -798,65 +900,49 @@ function makeFilterBooleanExpr (facetList,customerid)
             custBucket.push(prop+":"+encodeURIComponent(facetVal));
         }
     }
-    var bexpr = custBucket.join(" OR ");
-    if (custBucket.length > 1){
-        resultFilterCondExpr.push("("+bexpr+")");
-    }else if (custBucket.length === 1){
-        resultFilterCondExpr.push(bexpr);
-    }
     
-    bexpr = catBucket.join(" OR ");
-    if (catBucket.length > 1){
-        resultFilterCondExpr.push("("+bexpr+")");
-    }else if (catBucket.length === 1){
-        resultFilterCondExpr.push(bexpr);
-    }
+    makeOneBooleanSet(custBucket,resultFilterCondExpr);
+    makeOneBooleanSet(catBucket,resultFilterCondExpr);
+    makeOneBooleanSet(brandBucket,resultFilterCondExpr);
+    makeOneBooleanSet(unitBucket,resultFilterCondExpr);
+    makeOneBooleanSet(propBucket,resultFilterCondExpr);
     
-    bexpr = brandBucket.join(" OR ");
-    if (brandBucket.length > 1){
-        resultFilterCondExpr.push("("+bexpr+")");
-    }else if (brandBucket.length === 1){
-        resultFilterCondExpr.push(bexpr);
-    }
-    
-    bexpr = unitBucket.join(" OR ");
-    if (unitBucket.length > 1){
-        resultFilterCondExpr.push("("+bexpr+")");
-    }else if (unitBucket.length === 1){
-        resultFilterCondExpr.push(bexpr);
-    }
-    
-    bexpr = propBucket.join(" OR ");
-    if (propBucket.length > 1){
-        resultFilterCondExpr.push("("+bexpr+")");
-    }else if (propBucket.length === 1){
-        resultFilterCondExpr.push(bexpr);
-    }
-    
-    /* final cond expression */
-    resultFacetBooleanExpr = resultFilterCondExpr.join(" AND ");
-    if (resultFilterCondExpr.length >= 1){
-        resultFacetBooleanExpr = " AND "+resultFacetBooleanExpr;
-    }
     return resultFacetBooleanExpr;
     
 };
 
-function addFacetingFields (storeid,customerid,custsegmentid)
-{
+function addFacetingFields (storeid,customerid,custsegmentid,otherFacets)
+{ 
+    var facetFieldsListAr = facetFields.slice();
+    for (x in facetFieldsListAr){
+        facetFieldsListAr[x] = facetFieldsListAr[x].replace(/CUSTOMERID/g,customerid).replace(/STOREID/,storeid).replace(/SEGMENTID/,custsegmentid);
+    }
+    
+    for (x in otherFacets){
+        var facet = otherFacets[x];
+        if (facet.match(/^facet.field/)){
+            facet = facet.match(/}.*$/g)[0].replace("}","");
+            
+            var index = facetFieldsListAr.indexOf(facet);
+            if (index >= 0){
+                facetFieldsListAr.splice(index,1);
+                console.log(" removing facet :"+facet);
+            }
+        }
+    }
      //Add facting fields
-    var facetFieldsList = facetFields.join("&facet.field=");
+    var facetFieldsList = facetFieldsListAr.join("&facet.field=");
     var allFaceQueries = facetQueries.join("&facet.query=").replace(/CUSTOMERID/g,customerid);
     var faceConfs = "facet=true&facet.mincount=1&facet.limit=100&facet.sort=count";
     ;
-    var faceFields = faceConfs + "&facet.field=" + facetFieldsList;
+    var faceFieldsLocal = faceConfs + "&facet.field=" + facetFieldsList;
     if ((typeof customerid !== 'undefined') && customerid !== ''){ 
-       faceFields = faceFields +"&facet.query="+allFaceQueries;
+       faceFieldsLocal = faceFieldsLocal +"&facet.query="+allFaceQueries;
     }
 
-    faceFields = faceFields.replace(/STOREID/g, storeid);
-    faceFields = faceFields.replace(/SEGMENTID/g, custsegmentid);
-    return faceFields;
+    faceFieldsLocal = faceFieldsLocal.replace(/STOREID/g, storeid);
+    faceFieldsLocal = faceFieldsLocal.replace(/SEGMENTID/g, custsegmentid);
+    return faceFieldsLocal;
 };
 
 function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword, start,facetList)
@@ -868,7 +954,8 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     }
     
    //calculate facet boolean expression
-    var fPair = makeFilterBooleanExpr (facetList,customerid);
+    //var fPair = makeFilterBooleanExpr() (facetList,customerid);
+    var fPair = makeFilterBooleanExprTagExclude(facetList,customerid);
    
     var hlPars = "hl=true&hl.fl=ProductModelName&hl.encoder=html&hl.simple.pre=<b>&hl.simple.post=</b>&f.ProductModelName.hl.fragsize=30&f.ProductModelName.hl.snippets=3&f.ProductModelName.hl.alternateField=ProductModelName";
     // 
@@ -883,7 +970,7 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     adjustRankOrder(localRankOrder, storeid, custsegmentid, discountPrefLev);
 
     //Add facting fields
-    var faceFields = addFacetingFields (storeid,customerid,custsegmentid);
+    var faceFields = addFacetingFields (storeid,customerid,custsegmentid,fPair);
 
     //debuggin bf parameters for now with boosting instead of sorting */
     //var sortQuery = prepareSortExpression2(localRankOrder,customerid,queryKeyword);
@@ -901,8 +988,11 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     queryKeyword = encodeURIComponent(queryKeyword);
     var fl = "fl=" + localFlList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid).replace(/CUSTOMERID/g,customerid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
-    var solrURL = "q=StoreID:" + storeid + fPair+" AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&" + sortQuery + "&" + pfqfOnlyQuery + "&" + extraOpts;
+    var solrURL = "q=StoreID:" + storeid + " AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&" + sortQuery + "&" + pfqfOnlyQuery + "&" + extraOpts;
     solrURL = solrURL + "&" + faceFields + "&" + hlPars;
+    if (fPair.length > 0){
+        solrURL = solrURL + "&"+fPair.join("&");
+    }
 
     return solrURL;
 
@@ -1066,7 +1156,7 @@ function getFacetQueryParam(query)
     var isProm = "InPromotion_" + storeid;
     var facetList = {};
     for (var prop in query){
-        console.log ("checking prop="+prop+":"+query[prop]);      
+        console.log ("checking prop="+prop+":"+query[prop]+":"+query[prop].constructor);      
         if (prop.match(/PathLevel2|ProductProperty/)) {
             facetVal = query[prop];
             facetList[prop] = [];
@@ -1078,7 +1168,7 @@ function getFacetQueryParam(query)
             }
             else
              facetList[prop] = facetVal;
-        }else if (prop === isMcc || prop === isProm || prop.match(/UnitSymbol|IsMigroskop|BrandName|CustomersPurchased|CustomersFavourite|ProductProperty/)){
+        }else if (prop === isMcc || prop === isProm || prop.match(/UnitExpr|IsMigroskop|BrandName|CustomersPurchased|CustomersFavourite|ProductProperty/)){
             facetVal = query[prop];
             facetList[prop] = facetVal;
         }
@@ -1120,7 +1210,7 @@ function getPostedFacetQueryParam(postBody)
         if (filters[j]["k"] === "mcc") {
             facetList[isMcc] = filters[j]["v"];;
         }else if (filters[j]["k"] === "units") {
-            facetList['UnitSymbol'] =  filters[j]["v"];;
+            facetList['UnitExpr'] =  filters[j]["v"];;
         }else  if (filters[j]["k"] === "migroskop") {
             console.log ("getPostedFacetQueryParam:migroskop:"+filters[j]["v"]);
             facetList['IsMigroskop'] = filters[j]["v"];
@@ -1301,7 +1391,7 @@ function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, 
    }
    //facetVal.constructor === Array
    //Add facting fields
-    var faceFields = addFacetingFields (storeid,customerid,custsegmentid);
+    var faceFields = addFacetingFields (storeid,customerid,custsegmentid,fPair);
     
     queryKeyword = encodeURIComponent(queryKeyword);
     var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid) + ",score";

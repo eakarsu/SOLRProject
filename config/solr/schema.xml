@@ -135,7 +135,7 @@
    <field name="ProductProperty" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="CategoryPath" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="ProductFeatures" type="text_tr" indexed="true"  multiValued="true" stored="true"/>
-   <field name="UnitSymbol" type="text_tr" indexed="true" stored="true"  multiValued="false" />
+   <field name="UnitSymbol" type="notoktext_tr" indexed="true" stored="true"  multiValued="false" />
    <field name="UnitVal" type="float" indexed="true" stored="true"  multiValued="false" />
    <field name="UnitExpr" type="text_tr" indexed="true" stored="true"  multiValued="false" />
    <field name="PathLevel2" type="notoktext_tr" indexed="true" stored="true" multiValued="true"/>	
@@ -147,7 +147,8 @@
    <field name="BrandName" type="notoktext_tr" indexed="true" stored="true"/>
    <field name="BrandName_TR" type="textExact" indexed="true" stored="false"/>  
    <field name="IsMigroskop" type="int" indexed="true" stored="true"/>
- 
+   <field name="IsInCampaign" type="boolean" indexed="true" stored="true"/>
+
    <!-- sortable field -->	
    <field name="ProductModelName_Sort" type="alphaOnlySort" indexed="true" stored="false"/>
 
@@ -155,7 +156,9 @@
    <field name="BrandName_Facet" type="notoktext_tr_facet" indexed="true" stored="false"/>
    <field name="PathLevel2_Facet" type="notoktext_tr_facet" indexed="true" stored="false" multiValued="true"/>
    <field name="ProductProperty_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
-   
+   <field name="UnitSymbol_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
+   <field name="UnitExpr_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
+    
    <!-- Price Fields. Triple price value per store -->  
    <dynamicField name="Price_*" type="float" indexed="true" multiValued="false" stored="true"/>
    <dynamicField name="InStock_*" type="boolean" indexed="true" multiValued="false" stored="true"/>  
@@ -169,6 +172,7 @@
    <field name="Amount" type="float" indexed="true" stored="true" multiValued="false"/>
    <field name="OrderCount" type="int" indexed="true" stored="true" multiValued="false"/>
    <field name="NumberOfClicks" type="int" indexed="true" stored="true" multiValued="false"/>
+   <field name="NumberOfAddCarts"  type="int" indexed="true" stored="true" multiValued="false"/>
    <field name="AmountGrade" type="int" indexed="true" stored="true" multiValued="false"/>
    <field name="OrderCountGrade" type="int" indexed="true" stored="true" multiValued="false"/>
    <field name="NumberOfClicksGrade" type="int" indexed="true" stored="true" multiValued="false"/>
@@ -396,6 +400,8 @@
    <copyField source="BrandName" dest="BrandName_Facet"/>
    <copyField source="PathLevel2" dest="PathLevel2_Facet"/>
    <copyField source="ProductProperty" dest="ProductProperty_Facet"/>
+   <copyField source="UnitSymbol" dest="UnitSymbol_Facet"/>
+   <copyField source="UnitExpr" dest="UnitExpr_Facet"/>
  
    <!-- Above, multiple source fields are copied to the [text] field. 
 	  Another way to map multiple source fields to the same 
@@ -1317,12 +1323,15 @@
 
      <fieldType name="textExact" class="solr.TextField" positionIncrementGap="100" >
         <analyzer type="index">
+	
                 <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+		 <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
                  <filter class="solr.LimitTokenCountFilterFactory" maxTokenCount="20"/>
                 <filter class="solr.LowerCaseFilterFactory"/>
         </analyzer>
          <analyzer type="query">
                 <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+		<filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
                  <filter class="solr.LimitTokenCountFilterFactory" maxTokenCount="20"/>
                 <filter class="solr.LowerCaseFilterFactory"/>
         </analyzer>
