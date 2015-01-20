@@ -112,8 +112,38 @@ function findFacetingValues (solrdata,customerid,storeid,query)
             }
             facets[facetName] = array;
         }
+        
     }  
-     
+    
+    /*
+         * "UnitVal_GR":{
+        "counts":[
+          "0.0",2,
+          "100.0",4,
+          "200.0",4,
+          "300.0",1,
+          "500.0",3,
+          "600.0",1,
+          "700.0",2,
+          "800.0",2],
+        "gap":100.0,
+        "start":0.0,
+        "end":2000.0},
+         */
+        var array = [];
+        var facetRanges = solrdata.facet_counts.facet_ranges;
+        //facetName:UnitVal_GR
+        for (var facetName in facetRanges){
+            var facetQueryUrl = facetQueryUrlInit;
+            var facetTuple = facetRanges[facetName];
+             var counts = facetTuple["counts"];
+             if (counts.length === 0){
+                 continue;
+             }
+             console.log (" Adding facet range name:"+facetName+":"+counts.length);
+             facets[facetName] = facetTuple;
+        }
+        
      /*
     console.log ("FACETS..");
     for (var prop in facets){
@@ -473,12 +503,7 @@ function reformatSolrResult (solrBody,postBody)
         filters[6] = {k:"brands",v:brands};
 
         var units = [];
-        /*for (var j=0;j<Math.min(facets.UnitSymbol.length,filterResultLimit);j++){
-            units.push({"n": facets.UnitSymbol[j].facetValue, c: facets.UnitSymbol[j].facetCount});
-        }*/
-        for (var j=0;j<Math.min(facets.UnitExpr.length,filterResultLimit);j++){
-            units.push({"n": facets.UnitExpr[j].facetValue, c: facets.UnitExpr[j].facetCount});
-        }
+        fillUnitFacetRanges(facets,units);
         filters[7] = {k:"units",v:units};
 
         var properties = [];
@@ -492,6 +517,41 @@ function reformatSolrResult (solrBody,postBody)
     
 };
 
+/*
+         * "UnitVal_GR":{
+        "counts":[
+          "0.0",2,
+          "100.0",4,
+          "200.0",4,
+          "300.0",1,
+          "500.0",3,
+          "600.0",1,
+          "700.0",2,
+          "800.0",2],
+        "gap":100.0,
+        "start":0.0,
+        "end":2000.0},
+         */
+function fillUnitFacetRanges (facets,units)
+{
+    for (var facetName in facets){
+        
+        if (!facetName.match(/UnitVal_/)){
+            continue;
+        }
+        console.log ("fillUnitFacetRanges:adding:"+facetName);
+        var tuple = facets[facetName];
+        var gap = parseInt (tuple["gap"]);
+        var counts = tuple["counts"];
+        for (var x=0;x<counts.length;x += 2){
+            var lb = parseInt(counts[x]);
+            var ub = lb + gap;
+            var expr = facetName+":["+lb+" TO "+ub+"]";
+            var facetCount = counts[x+1];
+            units.push({"n": expr, c: facetCount});
+        }        
+    }
+};
 
 function handlePostSolrRequest(inresponse, request) {
     

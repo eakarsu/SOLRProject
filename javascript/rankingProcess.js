@@ -70,9 +70,6 @@ var flList = [
     //'ProductMoreDetail',
     'Description',
     'ProductProperty',
-    'UnitSymbol',
-    'UnitVal',
-    'UnitExpr',
     'PathLevel2',
     'IsMigroskop',
     'Price_STOREID',
@@ -82,7 +79,23 @@ var flList = [
     'score',
     'NumberOfAddCarts',
     'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
-    'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
+    'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))',
+    'UnitVal_ADET',
+    'UnitVal_CC',
+    'UnitVal_CM',
+    'UnitVal_G',
+    'UnitVal_GR',
+    'UnitVal_KG',
+    'UnitVal_L',
+    'UnitVal_LT',
+    'UnitVal_ML',
+    'UnitVal_M',
+    'UnitVal_MM',
+    'UnitVal_MP',
+    'UnitVal_VOLT',
+    'UnitVal_V',
+    'UnitVal_WATT',
+    'UnitVal_W'
 ];
  
 
@@ -105,8 +118,6 @@ var qlList = [
    
 var facetFields = [
     'IsMCCProduct_STOREID',
-    'UnitSymbol',
-    'UnitExpr',
     'IsMigroskop',
     'InPromotion_STOREID',
     'InStock_STOREID',
@@ -119,13 +130,12 @@ var facetFields = [
     'PathLevel2_Facet',
     'BrandName_Facet',
     'ProductProperty_Facet',
-    'UnitExpr_Facet',
     'IsInCampaign'
 ];
 
  var facetQueries = [
-     'exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
-     'exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
+     '{!ex=customer}exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
+     '{!ex=customer}exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
  ];
 
 
@@ -757,13 +767,13 @@ function makeOneBooleanSet (bucket,resultFilterCondExpr)
     
 };
 
-function makeOneBooleanSetTag (bucket,resultFilterCondExpr,label)
+function makeOneBooleanSetTag (bucket,resultFilterCondExpr,label,customerid,storeid)
 {
     var bexpr = bucket.join(" OR ");
     if (bucket.length > 1){
         bexpr = "("+bexpr+")";
     }
-    
+    console.log ("label="+label+" bexpr="+bexpr);
     if (bexpr !== ""){
         bexpr = "fq={!tag="+label+"}"+bexpr;
         resultFilterCondExpr.push(bexpr);
@@ -773,6 +783,20 @@ function makeOneBooleanSetTag (bucket,resultFilterCondExpr,label)
             if (prop.match(/PathLevel2|BrandName|ProductProperty/)){
                 prop = prop+"_Facet";
             }
+            if (prop.match(/CustomersPurchased|CustomersFavourite|InPromotion|IsMCCProduct|IsMigroskop/)){
+                var custAtts= ["InPromotion","IsMCCProduct","IsMigroskop"];
+                for (var x in custAtts){
+                    prop = custAtts[x];
+                    if (prop !== "IsMigroskop"){
+                        prop = prop +"_"+storeid;
+                    }
+                    var facetEx = "facet.field={!ex="+label+"}"+prop;
+                    if (resultFilterCondExpr.indexOf(facetEx) < 0){
+                        resultFilterCondExpr.push(facetEx);
+                    }
+                }
+                continue;
+            }
             var facetEx = "facet.field={!ex="+label+"}"+prop;
             if (resultFilterCondExpr.indexOf(facetEx) < 0){
                 resultFilterCondExpr.push(facetEx);
@@ -781,7 +805,7 @@ function makeOneBooleanSetTag (bucket,resultFilterCondExpr,label)
     }
 };
 
-function makeFilterBooleanExprTagExclude (facetList,customerid)
+function makeFilterBooleanExprTagExclude (facetList,customerid,storeid)
 {
     var resultFilterCondExpr = [];
     var custBucket = [];
@@ -809,8 +833,11 @@ function makeFilterBooleanExprTagExclude (facetList,customerid)
         }
         else if (facetVal.constructor === Array && prop === 'UnitExpr'){//units
             console.log ("Adding to unitexpr bucket");
-            for (var inprop in facetVal){
-                unitBucket.push(prop+":"+encodeURIComponent(facetVal[inprop]));
+            for (var x=0;x<facetVal.length;x+=3){
+                var rangeQuery = "["+facetVal[x+1]+ " TO "+facetVal[x+2]+"]";
+                var localPropName = "UnitVal_"+facetVal[x];
+                var rangeExpr = localPropName+":"+rangeQuery;
+                unitBucket.push(rangeExpr);
             }
         }
         else if (facetVal.constructor === Array && prop === 'ProductProperty'){//productProperties
@@ -834,11 +861,11 @@ function makeFilterBooleanExprTagExclude (facetList,customerid)
         }
     }
     
-    makeOneBooleanSetTag(custBucket,resultFilterCondExpr,"customer");
-    makeOneBooleanSetTag(catBucket,resultFilterCondExpr,"category");
-    makeOneBooleanSetTag(brandBucket,resultFilterCondExpr,"brand");
-    makeOneBooleanSetTag(unitBucket,resultFilterCondExpr,"unit");
-    makeOneBooleanSetTag(propBucket,resultFilterCondExpr,"property");
+    makeOneBooleanSetTag(custBucket,resultFilterCondExpr,"customer",customerid,storeid);
+    makeOneBooleanSetTag(catBucket,resultFilterCondExpr,"category",customerid,storeid);
+    makeOneBooleanSetTag(brandBucket,resultFilterCondExpr,"brand",customerid,storeid);
+    makeOneBooleanSetTag(unitBucket,resultFilterCondExpr,"unit",customerid,storeid);
+    makeOneBooleanSetTag(propBucket,resultFilterCondExpr,"property",customerid,storeid);
     
     return resultFilterCondExpr;
     
@@ -877,8 +904,11 @@ function makeFilterBooleanExpr (facetList,customerid)
             }
         }
         else if (facetVal.constructor === Array && prop === 'UnitExpr'){//units
-            for (var inprop in facetVal){
-                unitBucket.push(prop+":"+encodeURIComponent(facetVal[inprop]));
+            for (var x=0;x<facetVal.length;x+=3){
+                var rangeQuery = "["+facetVal[x+1]+ " TO "+facetVal[x+2]+"]";
+                var localPropName = "UnitVal_"+facetVal[x];
+                var rangeExpr = localPropName+":"+rangeQuery;
+                unitBucket.push(rangeExpr);
             }
         }
         else if (facetVal.constructor === Array && prop === 'ProductProperty'){//productProperties
@@ -907,7 +937,7 @@ function makeFilterBooleanExpr (facetList,customerid)
     makeOneBooleanSet(unitBucket,resultFilterCondExpr);
     makeOneBooleanSet(propBucket,resultFilterCondExpr);
     
-    return resultFacetBooleanExpr;
+    return resultFilterCondExpr;
     
 };
 
@@ -955,7 +985,7 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     
    //calculate facet boolean expression
     //var fPair = makeFilterBooleanExpr() (facetList,customerid);
-    var fPair = makeFilterBooleanExprTagExclude(facetList,customerid);
+    var fPair = makeFilterBooleanExprTagExclude(facetList,customerid,storeid);
    
     var hlPars = "hl=true&hl.fl=ProductModelName&hl.encoder=html&hl.simple.pre=<b>&hl.simple.post=</b>&f.ProductModelName.hl.fragsize=30&f.ProductModelName.hl.snippets=3&f.ProductModelName.hl.alternateField=ProductModelName";
     // 
@@ -1165,7 +1195,7 @@ function getFacetQueryParam(query)
                     var val = facetVal[index].replace(/"/g,"");
                     facetList[prop].push('"'+val+'"');
                   }
-            }
+            } 
             else
              facetList[prop] = facetVal;
         }else if (prop === isMcc || prop === isProm || prop.match(/UnitExpr|IsMigroskop|BrandName|CustomersPurchased|CustomersFavourite|ProductProperty/)){
@@ -1193,9 +1223,45 @@ function getFacetQueryParam(query)
         {"k": "categories", "v": ["hazır çocuk yemekleri", "bibe
         ronlar"]},
         {"k": "brands", "v": ["milupa", "bebelac"]},
-        {"k": "units", "v": ["kg", "gr"]},
+        {"k": "units", "v": ["kg","gr"]},
+        {"k": "units", "v": ["UnitVal_ADET:[0 TO 100]", "UnitVal_ADET:[100 TO 200]"]}, //RESULT:new way of unit faceting
         {"k": "productProperty", "v": ["?", "?", "?"]}
     ]
+{
+  "keyword" : "ceviz",
+  "store" : 237,
+  "customerId" : 737116,
+  "customerSegment" : null,
+  "campaignSensitivity" : null,
+  "offset" : 0,
+  "limit" : 20,
+  "filterResultLimit" : 10,
+  "language" : "tr",
+  "sortkeyword" : "",
+   "filters" : [ {
+    "k" : "units",
+    "v" : ["ADET",1,200, "ADET",200,300]
+  } ]
+ 
+}
+
+RESULT:
+
+            "k": "units",
+            "v": [
+                {
+                    "n": "UnitVal_ADET:[0 TO 100]",
+                    "c": 10
+                },
+                {
+                    "n": "UnitVal_ADET:[100 TO 200]",
+                    "c": 2
+                },
+                {
+                    "n": "UnitVal_ADET:[200 TO 300]",
+                    "c": 6
+                }
+            ]
  */
 function getPostedFacetQueryParam(postBody)
 {
@@ -1382,7 +1448,8 @@ function handleSortSolrRequest(postBody)
 function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, start,sortkeyword,facetList)
 {
     //calculate facet boolean expression
-   var fPair = makeFilterBooleanExpr (facetList,customerid);
+   //var fPair = makeFilterBooleanExpr (facetList,customerid);
+   var fPair = makeFilterBooleanExprTagExclude(facetList,customerid,storeid); 
     
    if (sortkeyword.match(/Price/)){
         sortkeyword = sortkeyword.replace(" ","_"+storeid+" ");
@@ -1394,7 +1461,7 @@ function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, 
     var faceFields = addFacetingFields (storeid,customerid,custsegmentid,fPair);
     
     queryKeyword = encodeURIComponent(queryKeyword);
-    var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid) + ",score";
+    var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid).replace(/CUSTOMERID/g,customerid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
     var solrURL = "q=StoreID:" + storeid + fPair+" AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&" + extraOpts;
     solrURL = solrURL + "&" + faceFields+"&sort="+sortkeyword;
