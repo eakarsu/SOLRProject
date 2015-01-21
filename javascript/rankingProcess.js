@@ -838,7 +838,9 @@ function makeFilterBooleanExprTagExclude (facetList,customerid,storeid)
                 facetVal = [facetVal];
             }
             for (var x in facetVal){
-                facetVal[x] = facetVal[x].substring(1,facetVal[x].length-1);
+                if (facetVal[x][0] === '"'){
+                    facetVal[x] = facetVal[x].substring(1,facetVal[x].length-1);
+                }
                 var words = facetVal[x].split(/ |-/);
                 var lb = words [0];
                 var ub = words [3];

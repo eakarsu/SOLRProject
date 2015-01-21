@@ -533,26 +533,14 @@ function reformatSolrResult (solrBody,postBody)
          */
 function fillUnitFacetRanges (facets,units)
 {
-    for (var facetName in facets){
+    var faceList = facets['UnitExpr'];
+    for (var x in faceList){
         /*
           "n": "7 - * ADET",
           "c": 10
         */
-        if (!facetName.match(/UnitVal_/)){
-            continue;
-        }
-        console.log ("fillUnitFacetRanges:adding:"+facetName);
-        var tuple = facets[facetName];
-        var gap = parseInt (tuple["gap"]);
-        var counts = tuple["counts"];
-        for (var x=0;x<counts.length;x += 2){
-            var lb = parseInt(counts[x]);
-            var ub = lb + gap;
-            var facetCount = counts[x+1];
-            facetName = facetName.replace(/.*_/,"");
-            var n = lb+" - "+ub+" "+facetName;
-            units.push({"n":n, "c": facetCount});
-        }        
+       var facetTriple = faceList[x];
+       units.push({"n":facetTriple.facetValue, "c": facetTriple.facetCount});      
     }
 };
 
