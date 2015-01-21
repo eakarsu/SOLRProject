@@ -80,24 +80,16 @@ var flList = [
     'NumberOfAddCarts',
     'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
     'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))',
-    'UnitVal_ADET',
-    'UnitVal_CC',
-    'UnitVal_CM',
-    'UnitVal_G',
-    'UnitVal_GR',
-    'UnitVal_KG',
-    'UnitVal_L',
-    'UnitVal_LT',
-    'UnitVal_ML',
-    'UnitVal_M',
-    'UnitVal_MM',
+    'UnitVal_ADET',   
+    'UnitVal_M', //"CM","MM"
+    'UnitVal_KG', //"GR","G"
+    'UnitVal_LT', //"L", "CC", "ML"
     'UnitVal_MP',
-    'UnitVal_VOLT',
     'UnitVal_V',
     'UnitVal_WATT',
     'UnitVal_W'
 ];
- 
+  
 
 var qlList = [
     'ProductMoreDetailExact',
@@ -798,6 +790,13 @@ function makeOneBooleanSetTag (bucket,resultFilterCondExpr,label,customerid,stor
                 continue;
             }
             var facetEx = "facet.field={!ex="+label+"}"+prop;
+            console.log ("pusing new facet expression:"+facetEx);
+            if (prop.match(/UnitVal_/)){
+                console.log ("Skipping prop="+prop);
+                continue;
+                //No need to do anything here. All set up in solrconfig.xml
+            } 
+            
             if (resultFilterCondExpr.indexOf(facetEx) < 0){
                 resultFilterCondExpr.push(facetEx);
             }
@@ -831,12 +830,23 @@ function makeFilterBooleanExprTagExclude (facetList,customerid,storeid)
                 brandBucket.push(prop+":\""+encodeURIComponent(facetVal[inprop])+"\"");
             }
         }
-        else if (facetVal.constructor === Array && prop === 'UnitExpr'){//units
+        /* parse each range expressin: lb - ub UNITID : eg:  "7 - * ADET"*/
+        //else if (facetVal.constructor === Array && prop === 'UnitExpr'){//units
+        else if ( prop === 'UnitExpr'){//units
             console.log ("Adding to unitexpr bucket");
-            for (var x=0;x<facetVal.length;x+=3){
-                var rangeQuery = "["+facetVal[x+1]+ " TO "+facetVal[x+2]+"]";
-                var localPropName = "UnitVal_"+facetVal[x];
+            if (facetVal.constructor !== Array){
+                facetVal = [facetVal];
+            }
+            for (var x in facetVal){
+                facetVal[x] = facetVal[x].substring(1,facetVal[x].length-1);
+                var words = facetVal[x].split(/ |-/);
+                var lb = words [0];
+                var ub = words [3];
+                var unitSymbol = words[4];
+                var rangeQuery = "["+lb+ " TO "+ub+"]";
+                var localPropName = "UnitVal_"+unitSymbol;
                 var rangeExpr = localPropName+":"+rangeQuery;
+                console.log ("Added :range expression= "+rangeExpr);
                 unitBucket.push(rangeExpr);
             }
         }
@@ -1186,7 +1196,7 @@ function getFacetQueryParam(query)
     var isProm = "InPromotion_" + storeid;
     var facetList = {};
     for (var prop in query){
-        console.log ("checking prop="+prop+":"+query[prop]+":"+query[prop].constructor);      
+        console.log ("checking prop="+prop+":"+query[prop]);      
         if (prop.match(/PathLevel2|ProductProperty/)) {
             facetVal = query[prop];
             facetList[prop] = [];
@@ -1245,23 +1255,6 @@ function getFacetQueryParam(query)
  
 }
 
-RESULT:
-
-            "k": "units",
-            "v": [
-                {
-                    "n": "UnitVal_ADET:[0 TO 100]",
-                    "c": 10
-                },
-                {
-                    "n": "UnitVal_ADET:[100 TO 200]",
-                    "c": 2
-                },
-                {
-                    "n": "UnitVal_ADET:[200 TO 300]",
-                    "c": 6
-                }
-            ]
  */
 function getPostedFacetQueryParam(postBody)
 {

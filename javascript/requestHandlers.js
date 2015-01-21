@@ -134,28 +134,27 @@ function findFacetingValues (solrdata,customerid,storeid,query)
         var facetRanges = solrdata.facet_counts.facet_ranges;
         //facetName:UnitVal_GR
         for (var facetName in facetRanges){
-            var facetQueryUrl = facetQueryUrlInit;
+            
             var facetTuple = facetRanges[facetName];
              var counts = facetTuple["counts"];
              if (counts.length === 0){
                  continue;
              }
-             console.log (" Adding facet range name:"+facetName+":"+counts.length);
-             facets[facetName] = facetTuple;
+             var facetSymb = facetName.replace(/.*_/,"");
+             var gap = parseFloat(facetTuple["gap"]);
+             for (var x=0;x<counts.length; x+= 2){
+                 var lb = parseFloat(counts[x]);
+                 var facetCount = parseInt(counts[x+1]);
+                 var ub = lb+gap;
+                 var rangeExpr = lb +" - "+ub+" "+facetSymb;                 
+                 var facetQueryUrl = facetQueryUrlInit+"UnitExpr=\""+rangeExpr+"\"";
+                 var triple = {facetValue:rangeExpr,facetCount:facetCount,facetQueryUrl:facetQueryUrl};
+                 array.push(triple);
+                 console.log ("Adde facet range url="+facetQueryUrl);
+             }          
         }
+        facets['UnitExpr'] = array;
         
-     /*
-    console.log ("FACETS..");
-    for (var prop in facets){
-        var facetVal = facets [prop];
-        console.log (prop+":"+facetVal.facetCount);
-        if (facetVal.constructor === Array){
-            for (var prop2 in facetVal){
-                console.log (facetVal[prop2].facetValue+":"+facetVal[prop2].facetCount);
-            }
-        }
-    }
-    */
     return facets;
 } 
 
@@ -535,7 +534,10 @@ function reformatSolrResult (solrBody,postBody)
 function fillUnitFacetRanges (facets,units)
 {
     for (var facetName in facets){
-        
+        /*
+          "n": "7 - * ADET",
+          "c": 10
+        */
         if (!facetName.match(/UnitVal_/)){
             continue;
         }
@@ -546,9 +548,10 @@ function fillUnitFacetRanges (facets,units)
         for (var x=0;x<counts.length;x += 2){
             var lb = parseInt(counts[x]);
             var ub = lb + gap;
-            var expr = facetName+":["+lb+" TO "+ub+"]";
             var facetCount = counts[x+1];
-            units.push({"n": expr, c: facetCount});
+            facetName = facetName.replace(/.*_/,"");
+            var n = lb+" - "+ub+" "+facetName;
+            units.push({"n":n, "c": facetCount});
         }        
     }
 };

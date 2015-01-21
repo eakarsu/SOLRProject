@@ -865,6 +865,48 @@
        <str name="f.ProductModelName.hl.fragsize">40</str>
        <str name="f.ProductModelName.hl.alternateField">ProductModelName</str>
        <str name="f.ProductModelName.hl.snippets">3</str>
+	
+	<str name="facet.range">{!ex=unit}UnitVal_ADET</str>
+	<int name="f.UnitVal_ADET.facet.range.start">0</int>
+	<int name="f.UnitVal_ADET.facet.range.end">2000</int>
+	<int name="f.UnitVal_ADET.facet.range.gap">100</int>
+	 
+	
+	<str name="facet.range">{!ex=unit}UnitVal_KG</str>
+	<float name="f.UnitVal_KG.facet.range.start">0</float>
+	<float name="f.UnitVal_KG.facet.range.end">25</float>
+	<float name="f.UnitVal_KG.facet.range.gap">1</float>
+	
+	<str name="facet.range">{!ex=unit}UnitVal_LT</str>
+	<float name="f.UnitVal_LT.facet.range.start">0</float>
+	<float name="f.UnitVal_LT.facet.range.end">5</float>
+	<float name="f.UnitVal_LT.facet.range.gap">1</float>
+	
+	<str name="facet.range">{!ex=unit}UnitVal_M</str>
+	<float name="f.UnitVal_M.facet.range.start">0</float>
+	<float name="f.UnitVal_M.facet.range.end">25</float>
+	<float name="f.UnitVal_M.facet.range.gap">1</float>
+	
+	<str name="facet.range">{!ex=unit}UnitVal_MP</str>
+	<int name="f.UnitVal_MP.facet.range.start">0</int>
+	<int name="f.UnitVal_MP.facet.range.end">2000</int>
+	<int name="f.UnitVal_MP.facet.range.gap">100</int>
+	
+	<str name="facet.range">UnitVal_V</str>
+	<int name="f.UnitVal_V.facet.range.start">0</int>
+	<int name="f.UnitVal_V.facet.range.end">2000</int>
+	<int name="f.UnitVal_V.facet.range.gap">100</int>
+
+	<str name="facet.range">{!ex=unit}UnitVal_WATT</str>
+	<int name="f.UnitVal_WATT.facet.range.start">0</int>
+	<int name="f.UnitVal_WATT.facet.range.end">2000</int>
+	<int name="f.UnitVal_WATT.facet.range.gap">100</int>
+
+	<str name="facet.range">UnitVal_W</str>
+	<int name="f.UnitVal_W.facet.range.start">0</int>
+	<int name="f.UnitVal_W.facet.range.end">2000</int>
+	<int name="f.UnitVal_W.facet.range.gap">100</int>
+	
     </lst>
  
   </requestHandler>
@@ -908,9 +950,10 @@
 
      <!-- Faceting defaults -->
        <str name="facet">on</str>
-       
+      
+<!-- 
        <str name="facet.field">UnitExpr</str>
-	<str name="facet.field">CustomersPurchased</str>
+       <str name="facet.field">CustomersPurchased</str> -->
 
        <!-- <str name="facet.pivot">PathLevel1,PathLevel2,PathLevel3,PathLevel4,PathLevel5,PathLevel6</str>
        <str name="facet.pivot">PathLevel2</str>
