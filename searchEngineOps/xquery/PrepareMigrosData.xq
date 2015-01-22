@@ -12,10 +12,10 @@ declare function local:convertUnit ($uval as xs:string, $usymbol as xs:string) a
                 else if ($usymbol eq "CM") then 0.01
                 else if ($usymbol eq "MM") then 0.001
                 else 1
-     
-    let $convSymb := if (fn:matches($usymbol,"CC|ML") or $usymbol eq "L") then "LT"
+    
+    let $convSymb := if (fn:matches($usymbol,"CC|ML|L")) then "LT"
                 else if ($usymbol eq "G" or $usymbol eq "GR")  then "KG"
-                else if ($usymbol eq "WATT")  then "W"
+		else if ($usymbol eq "WATT")  then "W"
                 else if (fn:matches($usymbol,"CM|MM")) then "M"
                 else $usymbol
                              
@@ -235,12 +235,20 @@ declare function local:getAddCartMap () as map(*)
 
 declare function local:getClicksMap () as map(*)
 {
+	  let $mapClicks :=
+           map:new(for $psi in (fn:doc("CSstreamClickInfo")//clickedPsi)[fn:position() < 5000]
+                 let $holder := $psi
+                 where $psi/../IsClicked eq "true"
+                 group by $psi
+                 return map:entry($psi,fn:count($holder)))
+(:
                 let $mapClicks :=
            map:new(for $record in fn:doc("CSstreamClickInfo")//Clicked
                  let $psi := $record/clickedPsi/text()
                  where $record/IsClicked eq "true"
                  group by $psi
                  return map:entry($psi,fn:count($record)))
+ :)
 
       return $mapClicks
 };

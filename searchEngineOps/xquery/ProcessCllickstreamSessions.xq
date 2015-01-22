@@ -52,7 +52,7 @@ return
     let $searchGroups := 
       for tumbling window $w in $selects
           start at $s when fn:true()
-          end $last next $beyond when fn:contains($beyond,$searchReq)
+          end $last next $beyond when fn:matches($beyond,$searchReq)
       return <window>{ $w }</window>
     
     return
@@ -76,6 +76,7 @@ return
 				for $item in $clickedPsi
 				  return
 				     <clickedPsi>{$item}</clickedPsi>
+                          return
                           <Clicked>
                                <Keyword>{$keyword}</Keyword>
                                <IsClicked>{$isClicked}</IsClicked>
