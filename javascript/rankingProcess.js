@@ -78,8 +78,6 @@ var flList = [
     'InPromotion_STOREID',
     'score',
     'NumberOfAddCarts',
-    'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
-    'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))',
     'UnitVal_ADET',   
     'UnitVal_M', //"CM","MM"
     'UnitVal_KG', //"GR","G"
@@ -87,7 +85,9 @@ var flList = [
     'UnitVal_MP',
     'UnitVal_V',
     'UnitVal_WATT',
-    'UnitVal_W'
+    'UnitVal_W',
+    'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
+    'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
 ];
   
 
@@ -1311,7 +1311,7 @@ function prepareBQOnlySOLRQuery2(request)
     var custsegmentid = query.custsegmentid;
     var discountlevel = query.discountlevel;
     var showsolrreq = query.showsolrreq;
-
+    
     var facetQueryPair = getFacetQueryParam(query);
     
     console.log("Received URL parameters from url=" + request.url + " q=" + queryKeyword +
@@ -1323,8 +1323,13 @@ function prepareBQOnlySOLRQuery2(request)
         console.log("setting start to 0");
     }
 
+    var debugOpts = "";
+    if (typeof debug !== 'showsolrreq' && showsolrreq == 'on'){
+        debugOpts = "&indent=true&debugQuery=true&debug.explain.structured=true"; 
+    }
+    
     var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery+debugOpts;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 };
@@ -1389,8 +1394,13 @@ function handlePostSolrRequest(postBody)
     var storeid = postBody["store"];
     var custsegmentid = postBody["customerSegment"];
     var discountlevel = postBody["campaignSensitivity"];
+    var debug = postBody["debug"];
     var showsolrreq = false;
 
+    var debugOpts = "";
+    if (typeof debug !== 'undefined' && debug){
+        debugOpts = "&indent=true&debugQuery=true&debug.explain.structured=true"; 
+    }
     var facetQueryPair = getPostedFacetQueryParam(postBody);
     var start = postBody['offset'];
     var rows = postBody['limit'];
@@ -1405,7 +1415,7 @@ function handlePostSolrRequest(postBody)
     }
 
     var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery+"&rows="+rows;
+    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery+"&rows="+rows+debugOpts;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 }

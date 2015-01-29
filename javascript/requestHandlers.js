@@ -168,6 +168,9 @@ function setupResults(body,storeid,custsegmentid,query) {
     var responseHeader = solrdata.responseHeader;
     var queryKeyword = query.q;
     
+    
+    var debugData = parseDebugExplain(solrdata);
+    
     var rows = new Array();
     var flist = rankingProcess.getFL();
     
@@ -195,6 +198,10 @@ function setupResults(body,storeid,custsegmentid,query) {
             rows[j][newFieldName2] = fieldVal;
             //console.log ("received field="+newFieldName+" = "+rows[j][newFieldName2]);
         }
+        //add debug data
+        var pid = rows[j]['ProductID'];
+        rows[j]['debugData'] = debugData[pid];
+        
     } ;
     return {rows: rows, numFound: numFound, start: start, qtime: responseHeader.QTime,facets:facets};
 }
@@ -450,6 +457,8 @@ function reformatSolrResult (solrBody,postBody)
             docs[j]['myOldOrders'] = row['myOldOrders'];
             docs[j]['migroskop'] = row['IsMigroskop'];
             docs[j]['mcc'] = row['IsMCCProduct'];
+            docs[j]['pid'] = row['ProductID'];
+            docs[j]['score'] = row['score'];
         } ;
         
         migrosResp.docs = docs;
@@ -477,19 +486,7 @@ function reformatSolrResult (solrBody,postBody)
         filters [4] = {k: "mcc", v: facets.IsMCCProduct.facetCount};
 
         var categories = [];
-        /*
-        for (var prop in facets){
-            var facetVal = facets [prop];
-            console.log (prop+":"+facetVal.facetCount);
-            if (facetVal.constructor === Array){
-                for (var prop2 in facetVal){
-                    console.log (facetVal[prop2].facetValue+":"+facetVal[prop2].facetCount);
-                }
-            }
-        }
-        */
-    
-    
+        
         for (var j=0;j<Math.min(facets.PathLevel2.length,filterResultLimit);j++){
             categories.push({"n": facets.PathLevel2[j].facetValue, c: facets.PathLevel2[j].facetCount});
         }
@@ -512,9 +509,149 @@ function reformatSolrResult (solrBody,postBody)
         filters[8] = {k:"productProperties",v:properties};
 
         migrosResp.filters = filters;
+        
+        //parse debug output
+        var debugData = parseDebugExplain(solrdata);
+        //Use PSI id instead of products
+        //debugExplainResult[pid] = {"score":totalScore,"details":scoreArray};
+        var debugDataPsi = {};
+        for (var j = 0; j < solrDocs.length; j++) {
+            var psi = docs[j]['psi'];
+            var pid = docs[j]['pid'];
+            debugDataPsi[psi] = {};
+            debugDataPsi[psi] = debugData[pid];
+            debugDataPsi[psi]['pid'] = pid;
+            console.log (psi +" <- "+pid);
+        }
+        
+       
+        //migrosResp.debugData = debugData;
+        migrosResp.debugData = debugDataPsi;
+        
         return migrosResp;
     
 };
+
+/*
+ * //Promotion
+ /FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelNameExact:/ -> product(map(and(termfreq(InPromotion_1005,true),exists($exactqq)),1,1,1,0),67108868)
+ 
+ //Kampanya
+ /FunctionQuery.*map.*query.*ProductID.*IsInCampaign:T/  -> FunctionQuery(map(exists(query(+(+ProductID:791714 +IsInCampaign:T)
+ 
+ /FunctionQuery.*product.*map.*termfreq.*CustomersFavourite.*query.*ProductModelNameExact:/  -> product(map(and(termfreq(CustomersFavourite,737116),exists($exactqq)),1,1,1,0),4100)
+ /FunctionQuery.*product.*map.*termfreq.*CustomersPurchased.*query.*ProductModelNameExact:/ -> product(map(and(termfreq(CustomersPurchased,737116),exists($exactqq)),1,1,1,0),4100)
+ /FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*SegAmount/ -> map(exists($exactqq),1,1,scale(field(SegAmount_null),1024,4092),0)
+ /FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*SegOrderCount/ -> map(exists($exactqq),1,1,scale(field(SegOrderCount_null),256,1020),0)
+ /FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*NumberOfClicks/ -> map(exists($exactqq),1,1,scale(field(NumberOfClicks),64,252),0)
+ /FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*Amount/ -> map(exists($exactqq),1,1,scale(field(Amount),16,60),0)
+ /FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*OrderCount/ -> map(exists($exactqq),1,1,scale(field(OrderCount),4,12),0),
+ 
+ /FunctionQuery.*product.*map.*termfreq.*CustomersFavourite.*query.*ProductModelName:/  -> product(map(and(termfreq(CustomersFavourite,737116),exists($qq)),1,1,1,0),4100)
+ /FunctionQuery.*product.*map.*termfreq.*CustomersPurchased.*query.*ProductModelName:/ -> product(map(and(termfreq(CustomersPurchased,737116),exists($qq)),1,1,1,0),4100)
+ /FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*SegAmount/ -> map(exists($qq),1,1,scale(field(SegAmount_null),1024,4092),0)
+ /FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*SegOrderCount/ -> map(exists($qq),1,1,scale(field(SegOrderCount_null),256,1020),0)
+ /FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*NumberOfClicks/ -> map(exists($qq),1,1,scale(field(NumberOfClicks),64,252),0)
+ /FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*Amount/ -> map(exists($qq),1,1,scale(field(Amount),16,60),0)
+ /FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*OrderCount/ -> map(exists($qq),1,1,scale(field(OrderCount),4,12),0)
+ * */
+function parseDebugExplain (solrdata)
+{
+        var debugExplainResult = {};
+        if (typeof solrdata["debug"] === 'undefined'){
+            return debugExplainResult;
+        }
+        
+        var debugExplain = solrdata["debug"]["explain"] ; 
+        for (var pid in debugExplain){
+            console.log ("Debug:"+pid);
+            var scoreDetails = debugExplain[pid];
+            var match = scoreDetails['match'];
+            var totalScore = scoreDetails['value'];
+            var funcScoreDetails = scoreDetails ['details'];
+            var description = scoreDetails ['description'];
+              
+            /*console.log ("ProductID : "+pid);           
+            console.log ("match = "+match);
+            console.log ("Value = "+totalScore);
+            console.log ("Description = "+description);
+            */
+            var scoreArray = []; 
+            for (var fun in funcScoreDetails){
+                var nextFun = funcScoreDetails[fun];
+                var funMatch = nextFun['match'];
+                var funTotalScore = nextFun['value'];
+                var funcDesc = nextFun ['description'];
+                
+                //no need to return any partial score that is 0 or match = false
+                if ((!funMatch) || funTotalScore < 0.1){
+                    continue;
+                }
+                
+                var selectedRanFuncName = "";
+                //InPromotion
+                if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelNameExact:/)){
+                    selectedRanFuncName = "InPromotion";
+                }
+ 
+                //Kampanya
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductID.*IsInCampaign:T/)){
+                    selectedRanFuncName = "Kampanya";
+                }
+
+                else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*CustomersFavourite.*query.*ProductModelNameExact:/)){
+                    selectedRanFuncName = "CustomersFavouriteExact";
+                }
+                else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*CustomersPurchased.*query.*ProductModelNameExact:/)){
+                    selectedRanFuncName = "CustomersPurchasedExact";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*SegAmount/)){
+                    selectedRanFuncName = "SegAmountExact";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*SegOrderCount/)){
+                    selectedRanFuncName = "SegOrderCountExact";
+                } 
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*int.*NumberOfClicks/)){
+                    selectedRanFuncName = "NumberOfClicksExact";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*float.*Amount/)){
+                    selectedRanFuncName = "AmountExact";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelNameExact:.*scale.*int.*OrderCount/)){
+                    selectedRanFuncName = "OrderCountExact";
+                } 
+
+                else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*CustomersFavourite.*query.*ProductModelName:/)){
+                    selectedRanFuncName = "CustomersFavourite";
+                } 
+                else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*CustomersPurchased.*query.*ProductModelName:/)){
+                    selectedRanFuncName = "CustomersPurchased";
+                } 
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*SegAmount/)){
+                    selectedRanFuncName = "SegAmount";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*SegOrderCount/)){
+                    selectedRanFuncName = "SegOrderCount";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelName:.*scale.*int.*NumberOfClicks/)){
+                    selectedRanFuncName = "NumberOfClicks";
+                } 
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelName:.*scale.*float.*Amount/)){
+                    selectedRanFuncName = "Amount";
+                } 
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelName:.*scale.*int.*OrderCount/)){
+                    selectedRanFuncName = "OrderCount";
+                }
+                //console.log ("Description Func="+selectedRanFuncName+" :"+funcDesc);
+                scoreArray.push ({"score":funTotalScore,"rankFunc":selectedRanFuncName});
+            }
+            scoreArray = scoreArray.sort(function(a, b){
+                return b.score-a.score;
+             });
+            debugExplainResult[pid] = {"score":totalScore,"details":scoreArray};
+        }
+        return debugExplainResult;
+}
 
 /*
          * "UnitVal_GR":{
