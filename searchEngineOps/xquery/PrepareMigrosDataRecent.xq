@@ -553,7 +553,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
    
                        
                        return 
-                         insert nodes ($nclicks,$nAddCarts,$priceTuples) as last  into $accRecord
+                         insert nodes ($nclicks,$nAddCarts,$priceTuples) into $accRecord
               
 }; 
 
@@ -656,7 +656,6 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                   let $shopID :=   $record/SHOP_ID/text()
                   let $storeID :=$record/STORE_ID/text()
                   let $isMigroskop :=  $record/IS_MIGROSKOP/text()
-	          let $isMigroskop := if ($isMigroskop eq "1") then "true" else "false"
                   let $brandID :=  $record/BRAND_ID/text() 
                
                    

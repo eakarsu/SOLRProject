@@ -116,7 +116,12 @@
    -->
    <field name="_root_" type="string" indexed="true" stored="false"/>
     
+ 
    <!-- Migros variables here -->
+   <field name="shopCategoryNameEn" type="text_tr" indexed="true" stored="true" multiValued="true"/>
+   <field name="shopCategoryName" type="text_tr" indexed="true" stored="true" multiValued="true"/>
+   <field name="shopCategoryId" type="text_tr" indexed="true" stored="true" multiValued="true"/>
+
    <field name="ProductModelID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
    <field name="ProductID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
    <field name="ProductModelName" type="text_tr" indexed="true" stored="true"/>
@@ -144,7 +149,7 @@
    <field name="Description_TR" type="textExact" indexed="true" stored="false"/>
    <field name="BrandName" type="notoktext_tr" indexed="true" stored="true"/>
    <field name="BrandName_TR" type="textExact" indexed="true" stored="false"/>  
-   <field name="IsMigroskop" type="int" indexed="true" stored="true"/>
+   <field name="IsMigroskop" type="boolean" indexed="true" stored="true"/>
    <field name="IsInCampaign" type="boolean" indexed="true" stored="true"/>
 
    <!-- sortable field -->	

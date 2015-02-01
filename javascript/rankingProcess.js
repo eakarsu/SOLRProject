@@ -17,11 +17,11 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = '192.168.191.143';
+var host = '192.168.191.145';
 //var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsCoreSecond/myselect?';
-var solrpathSuggest = '/migrossolr/ProductsCoreSecond/suggest_topic?';
+var solrpath = '/migrossolr/ProductsCoreThird/myselect?';
+var solrpathSuggest = '/migrossolr/ProductsCoreThird/suggest_topic?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
 var reRankDocs = 5000;
@@ -1054,11 +1054,11 @@ function prepareSuggestQueryExt(customerid, storeid, discountPrefLev, custsegmen
     var sortQuery = prepareBFExpression2Suggest(localRankOrder, customerid, queryKeyword);
  
     queryKeyword = encodeURIComponent(queryKeyword);
-    var solrURL = "q=" + queryKeyword+"&" + sortQuery+"&fl=PSIID_"+storeid;
+    var solrURL = "q=" + queryKeyword+"&" + sortQuery+"&fl=PSIID_"+storeid+",ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";
 
     return solrURL;
 
-}; 
+};  
 
 function prepareBrowseQuery(query)
 {
@@ -1275,11 +1275,6 @@ function getPostedFacetQueryParam(postBody)
         }else  if (filters[j]["k"] === "migroskop") {
             console.log ("getPostedFacetQueryParam:migroskop:"+filters[j]["v"]);
             facetList['IsMigroskop'] = filters[j]["v"];
-             if (facetList['IsMigroskop'] ){
-                facetList['IsMigroskop'] = 1;
-            }else if (!facetList['IsMigroskop']){
-                facetList['IsMigroskop'] = 0;
-            }
             console.log ("getPostedFacetQueryParam:migroskop:"+facetList['IsMigroskop']);
         }else  if (filters[j]["k"] === "brands") {
             facetList['BrandName'] = filters[j]["v"];
@@ -1413,7 +1408,8 @@ function handlePostSolrRequest(postBody)
         start = 0;
         console.log("setting start to 0");
     }
-
+    console.log ("rows:"+rows);
+    
     var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);
     var solrURL = "http://" + host + ":" + port + solrpath + solrQuery+"&rows="+rows+debugOpts;
     console.log("Sending solrURL=" + solrURL);

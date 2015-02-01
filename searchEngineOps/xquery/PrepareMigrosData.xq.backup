@@ -5,39 +5,23 @@ declare namespace string = "java.lang.String";
 declare namespace random = "java.util.Random";
 declare variable $action as xs:string external;
 
-declare function local:convertUnit ($uval as xs:string, $usymbol as xs:string) as xs:string*
+declare function local:convertUnit ($uval as xs:string, $usymbol as xs:string) as xs:string
 {
-    let $mult := if (fn:matches($usymbol,"CC|ML")) then 0.001 
-                else if ($usymbol eq "G" or $usymbol eq "GR") then 0.001
-                else if ($usymbol eq "CM") then 0.01
-                else if ($usymbol eq "MM") then 0.001
+   let $mult := if ($usymbol eq "L" or $usymbol eq "LT") then 1000 
+                else if (fn:matches($usymbol,"KG")) then 1000
+                else if ($usymbol eq "M") then 100
+                else if ($usymbol eq "MM") then 0.1
                 else 1
-    
-    let $convSymb := if (fn:matches($usymbol,"CC|ML|L")) then "LT"
-                else if ($usymbol eq "G" or $usymbol eq "GR")  then "KG"
-		else if ($usymbol eq "WATT")  then "W"
-                else if (fn:matches($usymbol,"CM|MM")) then "M"
-                else $usymbol
-                             
-   let $newFal := xs:string(xs:float($uval) * xs:float($mult))
-   return ($newFal,$convSymb)
+   let $val := xs:string(xs:float($uval) * xs:float($mult))
+   return $val
    
-};
-
-declare function local:getTriple ($unitExpr as xs:string,$unitVal as xs:string,$unitSymbol as xs:string) as element()*
-{
-    let $one := (<field name="UnitExpr_{$unitSymbol}">{$unitExpr}</field>,
-                 <field name="UnitVal_{$unitSymbol}">{$unitVal}</field>,
-                 <field name="UnitSymbol_{$unitSymbol}">{$unitSymbol}</field>)
-                                                    
-    return $one                                              
 };
 
 declare function local:splitUnits ($uval as xs:string) as item()*
 {
   let $adetExpr := "([0-9]+)[ ]*'?[ ]*(LU|LI|LÜ|Lİ)"
   let $rexpr1 := "([0-9]+X)?([0-9]+[\\.\\,]?[0-9]*[ ]?)"
-  let $rexpr2 := "(KG|GR|ML|CM|ADET|adet|kg|dk|DK|LT|CC|Watt|WATT|L|cm|gr|G|V|W|VOLT|Volt|Mps|MM|mm|MP|m|M)($|[^A-ZçÇğĞıİöÖşŞüÜ])"
+  let $rexpr2 := "(KG|GR|ML|CM|ADET|adet|kg|dk|DK|LT|CC|Watt|WATT|L|cm|gr|G|V|W|VOLT|Volt|Mps|MM|mm|MP|m|M)[^A-ZçÇğĞıİöÖşŞüÜ]"
   let $sexpr := "(KG|GR|ML|CM|ADET|adet|kg|dk|DK|LT|CC|Watt|WATT|L|cm|gr|G|V|W|VOLT|Volt|Mps|MM|mm|MP|m|M)"
   let $fullrexpr := fn:concat($rexpr1,$rexpr2)
   
@@ -48,7 +32,7 @@ declare function local:splitUnits ($uval as xs:string) as item()*
       let $ps := fn:analyze-string ($uval,$adetExpr)
       let $unitVal :=  fn:normalize-space($ps//fn:match[fn:last()]/fn:group[1]/text())
       let $unitVal := fn:replace($unitVal,",",".")
-      return local:getTriple(fn:concat ($unitVal," ADET"),$unitVal,"ADET")
+      return (fn:concat ($unitVal," ADET"),$unitVal,"ADET")
     else
       ()
    
@@ -56,34 +40,28 @@ declare function local:splitUnits ($uval as xs:string) as item()*
   let $otherExpr :=
     if ( $b ) then
       let $ps := fn:analyze-string ($uval,$fullrexpr)
-      
       let $adetVal := $ps//fn:match[fn:last()]/fn:group[@nr eq "1"]/text()
       let $adetVal :=  fn:substring(fn:normalize-space($adetVal),1,fn:string-length($adetVal)-1)
-      let $adetTuple := 
+      let $adetExpr := 
           if (fn:not(fn:empty($adetVal)) and $adetVal ne "") 
-          then local:getTriple(fn:concat ($adetVal," ADET"),$adetVal,"ADET")
+          then (fn:concat ($adetVal," ADET"),$adetVal,"ADET")
           else ()
-          
       let $unitVal :=  fn:normalize-space($ps//fn:match[fn:last()]/fn:group[@nr eq "2"]/text())
       let $unitVal := fn:replace($unitVal,",",".")
       let $unitSymbol :=  $ps//fn:match[fn:last()]/fn:group[@nr eq "3"]/text()
-      let $pair := local:convertUnit ($unitVal,$unitSymbol)
-      let $unitVal := $pair[1]
-      let $unitSymbol := fn:upper-case($pair[2])
-      return (local:getTriple(fn:concat($unitVal," ",$unitSymbol),$unitVal,$unitSymbol),$adetTuple)
+      let $unitSymbol := fn:upper-case($unitSymbol)
+      return (fn:concat($unitVal," ",$unitSymbol),$unitVal,$unitSymbol,$adetExpr)
     else
       ()
   
   let $onlySymbExpr :=
-    if (fn:empty($otherExpr) and fn:empty($adetTriple)) then
+    if (fn:empty($otherExpr) and fn:empty($adetExpr)) then
       let $ps := fn:analyze-string ($uval,fn:concat("[ ]+",$sexpr,"$"))
       let $unitSymbol := fn:normalize-space($ps//fn:match[fn:last()]/fn:group[@nr eq "1"]/text())
       let $unitSymbol := fn:upper-case($unitSymbol)
-      let $pair := local:convertUnit ("9999",$unitSymbol)
-      let $unitSymbol := $pair[2]
       return 
        if (fn:not(fn:empty($unitSymbol)) and $unitSymbol ne "") then
-          local:getTriple($unitSymbol,"9999",$unitSymbol)
+          ($unitSymbol,"9999",$unitSymbol)
        else ()
     else ()
       
@@ -235,20 +213,12 @@ declare function local:getAddCartMap () as map(*)
 
 declare function local:getClicksMap () as map(*)
 {
-	  let $mapClicks :=
-           map:new(for $psi in (fn:doc("CSstreamClickInfo")//clickedPsi)[fn:position() < 5000]
-                 let $holder := $psi
-                 where $psi/../IsClicked eq "true"
-                 group by $psi
-                 return map:entry($psi,fn:count($holder)))
-(:
                 let $mapClicks :=
            map:new(for $record in fn:doc("CSstreamClickInfo")//Clicked
                  let $psi := $record/clickedPsi/text()
                  where $record/IsClicked eq "true"
                  group by $psi
                  return map:entry($psi,fn:count($record)))
- :)
 
       return $mapClicks
 };
@@ -553,7 +523,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
    
                        
                        return 
-                         insert nodes ($nclicks,$nAddCarts,$priceTuples) as last  into $accRecord
+                         insert nodes ($nclicks,$nAddCarts,$priceTuples) into $accRecord
               
 }; 
 
@@ -656,7 +626,6 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                   let $shopID :=   $record/SHOP_ID/text()
                   let $storeID :=$record/STORE_ID/text()
                   let $isMigroskop :=  $record/IS_MIGROSKOP/text()
-	          let $isMigroskop := if ($isMigroskop eq "1") then "true" else "false"
                   let $brandID :=  $record/BRAND_ID/text() 
                
                    
@@ -677,20 +646,28 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                        {local:transTurkishChars("Description",$desc/text())}
                  
                        {                        
-                        let $utriple := local:splitUnits($pmn)                      
-                        return ($utriple)
+                        let $utriple := local:splitUnits($pmn)
+                        let $triple1 :=  if (fn:count($utriple) eq 6 ) then 
+                                              (<field name="UnitExpr_{$utriple[6]}">{$utriple[4]}</field>,
+                                                      <field name="UnitVal_{$utriple[6]}">{$utriple[5]}</field>,
+                                                      <field name="UnitSymbol_{$utriple[6]}">{$utriple[6]}</field>
+                                                    ) else ()
+                                                    
+                        let $triple2 := if (fn:count($utriple) ge 3) then 
+                                              (<field name="UnitExpr_{$utriple[3]}">{$utriple[1]}</field>,
+                                                      <field name="UnitVal_{$utriple[3]}">{$utriple[2]}</field>,
+                                                      <field name="UnitSymbol_{$utriple[3]}">{$utriple[3]}</field>
+                                                 ) else ()
+                        return ($triple1,$triple2)
+                        
+                      
                        }
                                  
                        <field name="ShopCode">{$shopCode}</field>         
                        <field name="ShopID">{$shopID}</field>
                             
-                       {for $record in  map:get($pathsmap,$pmid) 
-                          let $shopCategoryId := <field name="shopCategoryId">{$record/SHOP_CATEGORY_ID/text()}</field>
-                          let $shopCategoryName := <field name="shopCategoryName">{$record/SHOP_CATEGORY_NAME/text()}</field>
-                          let $shopCategoryNameEn := <field name="shopCategoryNameEn">{$record/SHOP_CATEGORY_NAME_EN/text()}</field>
-                          
-                          let $rpath := $record/Path/text()
-                          let $ar := fn:tokenize($rpath,"\\")[fn:position() > 1]
+                       {for $r in  map:get($pathsmap,$pmid) 
+                          let $ar := fn:tokenize($r,"\\")[fn:position() > 1]
                           let $plen := fn:count($ar)
                           let $pathLevels :=
                             for $p at $j in $ar
@@ -698,7 +675,7 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                               return
                                 <field name="{$name}" >{$p}</field>
                           return
-                             ($pathLevels[fn:last() - 1],<field name="CategoryPath">{$rpath}</field>,$shopCategoryId,$shopCategoryName,$shopCategoryNameEn)
+                             ($pathLevels[fn:last() - 1],<field name="CategoryPath">{$r}</field>)
                        }
                        
                        {for $custids in map:get($mapFavorites,$pid)
@@ -764,8 +741,9 @@ let $mapProperties :=
 let $pathsmap :=
   map:new(for $record in fn:doc("Paths")//record
                 let $pid := $record/PRODUCT_MODEL_ID
+                let $path := $record/Path/text()
                 group by $pid
-                return map:entry($pid,$record))
+                return map:entry($pid,$path))
                                                        
 let $mapMD :=
   map:new(for $record in $modelDetails//record

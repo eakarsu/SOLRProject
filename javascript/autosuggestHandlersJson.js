@@ -21,53 +21,6 @@ var reRankWeight = 1000;
 var maxCount = 5;
 var rankingProcess = require("./rankingProcess");
 
-function getSuggestTopics2(response, body, query, requesturl,solrURL) {
-   
-            
-    var solrdata = JSON.parse(body);
-    var highlighting = solrdata.highlighting;
-       
-    var counter = 0;
-    var topics  = [];
-    var pmnames = [];
-    patternArray = [];
-    for (var id in highlighting) {
-        if (highlighting.hasOwnProperty(id)) {
-            var origvalue = highlighting[id].suggest_ngram[0];
-            var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
-            if (pattern !== null){
-                pattern = pattern.join(" ").replace(/<em>|<\/em>/g,"");
-            }else{
-                continue;
-            }
-            var value = origvalue.replace(/<em>|<\/em>/g,"");
-            var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
-            label = label.replace(/<\/em>/g,"</span>");
-            console.log(id+":"+origvalue+" value="+value+":"+label+": pattern="+pattern);
-            if (pattern !== null){
-                var index = patternArray.indexOf(pattern);
-                if (index < 0 && counter < maxCount){ 
-                    patternArray.push(pattern);
-                    var triple1 = {id:id,value:value,label:label}; 
-                    pmnames.push(triple1); 
-                    var triple2 = {id:id+1,value:pattern,label:pattern}; 
-                    topics.push(triple2);
-                    counter++;
-                }
-                if (counter === maxCount){
-                    break;
-                }
-            }
-        }
-    }
-    var triple = {id:id,value:value,label:"-------------------------------------"}; 
-    topics.push(triple); 
-    topics = topics.concat(pmnames);
-    
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.write(JSON.stringify(topics));
-    response.end();
-};
 
 function getSpellChecks (solrdata,topics)
 {
@@ -76,7 +29,7 @@ function getSpellChecks (solrdata,topics)
     for (var j=2;j< spellcheck.length;j+=2){
        var word = spellcheck[j+1][1]; 
        console.log ("Spell check word="+word);
-       var triple2 = {id:j,value:word,label:word}; 
+       var triple2 = {id:j,value:word}; 
        topics.push(triple2);
     }
 };
@@ -118,8 +71,9 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
                         continue;
                     }
                     var psi = docs[j][psiIDProp]; 
+                    var pid = docs[j]['ProductID']; 
                     patternArray.push(pattern);
-                    var triple2 = {id:psi,value:pattern,label:pattern}; 
+                    var triple2 = {psi:psi,value:pattern,pid:pid}; 
                     topics.push(triple2);
                     counter++;
                 }
@@ -142,7 +96,13 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
             label = label.replace(/<\/em>/g,"</span>");
             if (counter < maxCount){ 
                 var psi = docs[j][psiIDProp]; 
-                var triple1 = {id:psi,value:value,label:label}; 
+                var pid = docs[j]['ProductID']; 
+                var shopCategoryId = docs[j]['shopCategoryId']; 
+                var shopCategoryName = docs[j]['shopCategoryName']; 
+                var shopCategoryNameEn = docs[j]['ShopCategoryNameEn']; 
+                         
+                var triple1 = {psi:psi,value:value,pid:pid,
+                    shopCategoryId:shopCategoryId,shopCategoryName:shopCategoryName,shopCategoryNameEn:shopCategoryNameEn}; 
                 pmnames.push(triple1); 
                 counter++;
             }
@@ -155,15 +115,25 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     if (counter === 0){
         getSpellChecks(solrdata,topics);
     }
+     
+    var words = [];
+    for (var k in topics){
+        words.push(topics[k].value);
+    }
     
-    var triple = {id:id,value:value,label:"-------------------------------------"}; 
-    pmnames.push(triple);
-    pmnames = pmnames.concat(topics);
+    var products = [];   
+    for (var k in pmnames){
+        var triple = {productId:pmnames[k].pid,name:pmnames[k].value,psi:pmnames[k].psi,
+            shopCategoryId:pmnames[k].shopCategoryId,shopCategoryName:pmnames[k].shopCategoryName,shopCategoryNameEn:pmnames[k].shopCategoryNameEn};
+        products.push(triple);
+    }
     
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.write(JSON.stringify(pmnames));
+    var tuple = {products:products,words:words};
+    
+    response.writeHead(200, { 'Content-Type': 'application/json;charset=utf-8' });
+    response.write(JSON.stringify(tuple));
     response.end();
-};
+}; 
 
 function autosuggest(presponse, request) {
     console.log("Request handler 'autosuggest' was called for " + request.url);
@@ -171,6 +141,8 @@ function autosuggest(presponse, request) {
     var term = encodeURIComponent(queryData.term);
      
     var solrURL = rankingProcess.prepareSuggestQuery(request);
+    solrURL = solrURL.replace(/autosuggest/,"autosuggestjson");
+    
     console.log("Autosuggest url ext:"+solrURL);
        
     requestmod(solrURL, function (error, response, body) {

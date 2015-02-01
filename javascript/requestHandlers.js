@@ -82,14 +82,14 @@ function findFacetingValues (solrdata,customerid,storeid,query)
         //kampanyali urunler,migroskop urunleri veya money club indirimli urunler
         if (facetName.match(/InPromotion|IsMigroskop|IsMCCProduct/)){
             for (var fp in facetVals){
-                if (facetVals[fp] === "1" || facetVals[fp] === "true"){
+                if (facetVals[fp] === "true"){
                     facetCount = facetVals[parseInt(fp)+1];
                     break;
                 }
             };
                        
             if (facetName.match(/IsMigroskop/)){
-                facetQueryUrl = facetQueryUrl+facetName+"=1";
+                facetQueryUrl = facetQueryUrl+facetName+"=true";
             }else{
                 facetQueryUrl = facetQueryUrl+facetName+"_"+storeid+"=true";
             }
@@ -520,7 +520,6 @@ function reformatSolrResult (solrBody,postBody)
             var pid = docs[j]['pid'];
             debugDataPsi[psi] = {};
             debugDataPsi[psi] = debugData[pid];
-            debugDataPsi[psi]['pid'] = pid;
             console.log (psi +" <- "+pid);
         }
         
