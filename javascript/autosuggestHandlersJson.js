@@ -45,7 +45,10 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     var solrdata = JSON.parse(body);
     var highlighting = solrdata.highlighting;
     var docs = solrdata.response.docs;
+    var numFound = solrdata.response.numFound;
+    
     var psiIDProp = "PSIID_"+storeid;
+    
     
     var counter = 0;
     var topics  = [];
@@ -53,6 +56,14 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     patternArray = [];
     var tries = 0;
     var j = -1;
+    
+    var docsMap ={};
+    var nelems = Math.min(100,numFound);
+    for (var j=0;j<nelems;j++ ){
+        var pid = docs[j]['ProductID'];
+        docsMap[pid]= docs[j];
+    };
+    
     for (var id in highlighting) {
         tries++;
         j++;
@@ -67,11 +78,12 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
             if (pattern !== null){
                 var index = patternArray.indexOf(pattern);
                 if (index < 0 && counter < maxCount){ 
-                    if (typeof docs[j][psiIDProp] === 'undefined'){
+                    if (typeof docsMap[id][psiIDProp] === 'undefined'){
                         continue;
                     }
-                    var psi = docs[j][psiIDProp]; 
-                    var pid = docs[j]['ProductID']; 
+                     var pid = id;
+                    var psi = docsMap[pid][psiIDProp]; 
+                    
                     patternArray.push(pattern);
                     var triple2 = {psi:psi,value:pattern,pid:pid}; 
                     topics.push(triple2);
@@ -85,6 +97,7 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     }
     console.log("Tried count="+tries);
     
+   
     counter = 0;
     j = 0;
      for (var id in highlighting) {
@@ -95,12 +108,15 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
             var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
             label = label.replace(/<\/em>/g,"</span>");
             if (counter < maxCount){ 
-                var psi = docs[j][psiIDProp]; 
-                var pid = docs[j]['ProductID']; 
-                var shopCategoryId = docs[j]['shopCategoryId']; 
-                var shopCategoryName = docs[j]['shopCategoryName']; 
-                var shopCategoryNameEn = docs[j]['ShopCategoryNameEn']; 
-                         
+                var pid = id; 
+                var psi = docsMap[pid][psiIDProp]; 
+                if (typeof psi === 'undefined'){
+                        continue;
+                }
+                var shopCategoryId = docsMap[pid]['shopCategoryId']; 
+                var shopCategoryName = docsMap[pid]['shopCategoryName']; 
+                var shopCategoryNameEn = docsMap[pid]['shopCategoryNameEn']; 
+                 
                 var triple1 = {psi:psi,value:value,pid:pid,
                     shopCategoryId:shopCategoryId,shopCategoryName:shopCategoryName,shopCategoryNameEn:shopCategoryNameEn}; 
                 pmnames.push(triple1); 

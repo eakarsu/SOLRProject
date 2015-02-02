@@ -132,9 +132,7 @@
    <field name="SearchKeywordValue" type="text_tr" multiValued="true" indexed="true" stored="true"/>
    <field name="CategoryID" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="SearchBoost" type="text_tr" multiValued="true" indexed="true" stored="true"/>
-   <field name="ProductMoreDetail" type="text_tr" indexed="true" stored="true"/>
    <field name="ProductModelNameExact" type="textExact" stored="true" indexed="true"/>
-   <field name="ProductMoreDetailExact" type="textExact" stored="true" indexed="true"/>
    <field name="CustomersPurchased" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="CustomersFavourite" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="ProductProperty" type="text_tr" indexed="true" multiValued="true" stored="true"/>
@@ -143,7 +141,6 @@
    
    <field name="PathLevel2" type="notoktext_tr" indexed="true" stored="true" multiValued="true"/>	
    <field name="ProductFeatures_TR" type="textExact" indexed="true"  multiValued="true" stored="false"/>
-   <field name="ProductMoreDetail_TR" type="textExact" indexed="true" stored="false"/>
    <field name="SearchKeywordValue_TR" type="textExact" multiValued="true" indexed="true" stored="false"/>
    <field name="ProductModelName_TR" type="textExact" indexed="true" stored="false"/>
    <field name="Description_TR" type="textExact" indexed="true" stored="false"/>
@@ -377,8 +374,6 @@
    <copyField source="Description" dest="turkishtext"/>
    <copyField source="SearchKeywordValue" dest="turkishtext"/>
    <copyField source="SearchBoost" dest="turkishtext"/>
-   <copyField source="ProductMoreDetail" dest="turkishtext" />
-   <copyField source="ProductMoreDetail"  dest="ProductMoreDetailExact"  />
    <copyField source="ProductModelName" dest="ProductModelNameExact" />
    <copyField source="PathLevel2" dest="turkishtext"/>
    <copyField source="ProductFeatures" dest="turkishtext"/>
@@ -388,7 +383,6 @@
    <copyField source="ProductModelName_TR" dest="text"/>
    <copyField source="Description_TR" dest="text"/>
    <copyField source="SearchKeywordValue_TR" dest="text"/>
-   <copyField source="ProductMoreDetail_TR" dest="text" />
    <copyField source="ProductFeatures_TR" dest="text"/>
    <copyField source="BrandName_TR" dest="text"/>
 

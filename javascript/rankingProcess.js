@@ -17,7 +17,7 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = '192.168.191.145';
+var host = '192.168.191.146';
 //var host = 'localhost';
 var port = '8080';
 var solrpath = '/migrossolr/ProductsCoreThird/myselect?';
@@ -47,10 +47,6 @@ var rankOrder = {
     BrandName_TR: 10,
     ProductFeatures: 10,
     ProductFeatures_TR: 10,
-    ProductMoreDetailExact: 10,
-    ProductMoreDetailExact_TR: 10,
-    ProductMoreDetail: 10,
-    ProductMoreDetail_TR: 10,
     Description: 10,
     Description_TR: 10,
     ProductProperty: 10,
@@ -67,7 +63,6 @@ var flList = [
     'OrderCount',
     'BrandName',
     'ProductFeatures',
-    //'ProductMoreDetail',
     'Description',
     'ProductProperty',
     'PathLevel2',
@@ -92,18 +87,15 @@ var flList = [
   
 
 var qlList = [
-    'ProductMoreDetailExact',
     'ProductModelNameExact',
     'ProductModelName',
     'BrandName',
     'ProductFeatures',
-    'ProductMoreDetail',
     'Description',
     'ProductProperty',
     'ProductModelName',
     'BrandName_TR',
     'ProductFeatures_TR',
-    'ProductMoreDetail_TR',
     'Description_TR',
     'ProductProperty_TR'
 ];

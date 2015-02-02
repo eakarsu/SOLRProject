@@ -224,19 +224,19 @@ declare function local:getSegmentInfo () as map(*)
 declare function local:getAddCartMap () as map(*)
 {
                 let $mapAddCarts :=
-           map:new(for $record in fn:doc("CSstreamCartInfo")//AddedToCart
-                 let $pid := $record/ProductID/text()
-		 where $pid ne "" and fn:not(fn:empty($pid))
-                 group by $pid
-                 return map:entry($pid,fn:count($record)))
+           map:new(for $record in fn:doc("CSstreamCartInfoMap")//doc
+                     let $pid := $record/ProductID/text()
+                     where $pid ne "" and fn:not(fn:empty($pid))
+                     group by $pid
+                     return map:entry($pid,fn:count($record)))
 
       return $mapAddCarts
 };
 
 declare function local:getClicksMap () as map(*)
 {
-	  let $mapClicks :=
-           map:new(for $psi in (fn:doc("CSstreamClickInfo")//clickedPsi)[fn:position() < 5000]
+   let $mapClicks :=
+           map:new(for $psi in fn:doc("CSstreamClickInfoMap")//PSIID
                  let $holder := $psi
                  where $psi/../IsClicked eq "true"
                  group by $psi
@@ -668,11 +668,9 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                        {$pidField} 
                        {$pmid}
                        {$pmn}
-                       {$pDetail}
                        {$desc}
                        <field name="IsMigroskop">{$isMigroskop}</field>
                       
-                       {local:transTurkishChars("ProductMoreDetail",$pDetail/text())} 
                        {local:transTurkishChars("ProductModelName",$pmn/text())}
                        {local:transTurkishChars("Description",$desc/text())}
                  
