@@ -17,11 +17,11 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = '192.168.191.146';
+var host = '192.168.191.148';
 //var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsCoreThird/myselect?';
-var solrpathSuggest = '/migrossolr/ProductsCoreThird/suggest_topic?';
+var solrpath = '/migrossolr/ProductsCoreOnlySanal/myselect?';
+var solrpathSuggest = '/migrossolr/ProductsCoreOnlySanal/suggest_topic?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
 var reRankDocs = 5000;
@@ -1022,7 +1022,9 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     queryKeyword = encodeURIComponent(queryKeyword);
     var fl = "fl=" + localFlList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid).replace(/CUSTOMERID/g,customerid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
-    var solrURL = "q=StoreID:" + storeid + " AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&" + sortQuery + "&" + pfqfOnlyQuery + "&" + extraOpts;
+    var solrURL = "q=StoreID:" + storeid + " AND (turkishtext:" + queryKeyword +
+            " OR text:" + queryKeyword +" OR ProductModelNameExact:"+queryKeyword+
+            ")&" + fl + "&" + sortQuery + "&" + pfqfOnlyQuery + "&" + extraOpts;
     solrURL = solrURL + "&" + faceFields + "&" + hlPars;
     if (fPair.length > 0){
         solrURL = solrURL + "&"+fPair.join("&");
