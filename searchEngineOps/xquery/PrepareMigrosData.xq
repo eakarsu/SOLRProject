@@ -279,7 +279,10 @@ declare %updating function local:addCRMDataIntoProducts ()
                   let $totalAmount := sum($prodGroup//AMOUNT/text())
                   let $totalOrderCount := sum($prodGroup//ORDER_COUNT)
                   let $customers := 
-                    for $cid in $prodGroup/CUSTOMER_ID/text()
+                    for $crec in $prodGroup
+		      let $cid := $crec/CUSTOMER_ID/text()
+		      let $rFlag := $crec/RFM_SANAL/text()
+		      where $rFlag ne "İnaktif"
                       return 
                         <field name="CustomersPurchased">{$cid}</field>
                   let $sumSolrFields := (<field name="Amount">{$totalAmount}</field>,
