@@ -1,18 +1,28 @@
-echo "Pulling Core tables from Oraqcle Database"
-./pullCoreTables.sh
+#!/bin/bash
+set -x #echo on
+
+ROOT=$(cd $(dirname "$0"); pwd)
+
+echo "$(date):SOLR indexing started"
+
+echo "$(date):Pulling Core tables from Oraqcle Database"
+$ROOT/pullCoreTables.sh
 
 echo "Indexing all Products related data into XML database called Basex"
-./indexProductsRawDataInBasex.sh
+$ROOT/indexProductsRawDataInBasex.sh
 
 echo "Prepare Solr index data in xml"
-./prepareSolrIndexData.sh
+$ROOT/prepareSolrIndexData.sh
 
 echo "Splitting files into multiple ones to expedidate indexing process"
-./prepareSolrInputFiles.sh
-
+$ROOT/prepareSolrInputFiles.sh
 
 echo "Now index All Migros data in SOLR"
 
-./performSolrIndexing.sh
+$ROOT/performSolrIndexing.sh localhost 8080 migrossolr
+
+./populateCampaigns.sh localhost 8080 migrossolr
+
+echo "$(date):SOLR indexing done"
 
 

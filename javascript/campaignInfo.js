@@ -62,9 +62,54 @@ String.prototype.turkish = function () {
         "productIDs":["415527","213916","194767","213937","180149"]
       }
    }; 
-      
+   var request = require('request');  
    var exactMatchMultiplier = 2;
-       
+   var campaignUrl = "http://192.168.191.150:8080/migrossolr/Campaigns/select?q=*:*&wt=json&indent=true" ;
+   var campaignData = [];
+   
+   /** 
+    * get campaign dat afrom SOLR and update local 
+    * @param {type} multiplier
+    * @param {type} highestRank
+    * @param {type} promMaxRankVal
+    * @returns {undefined}
+    */
+   function getCampaignData(multiplier,highestRank,promMaxRankVal){
+        var campExpr = [];
+        var campQuery = [];
+        for (x in campaignData){
+            var funcPair = getSOLRForCampaignQueryInfo (campaignData[x],multiplier,highestRank,promMaxRankVal);
+            campExpr.push(funcPair[0]);
+            campQuery.push(funcPair[1]);
+        }
+        return {campExpr:campExpr,campQuery:campQuery};
+   };
+   
+   /**
+    * 
+    * @returns {undefined}
+    */
+   function reloadCampaignDataRequest(response,req){
+        reloadCampaignData ();
+        console.log(" Reloaded campaing data:"+campaignData+":"+campaignData.length);
+        response.writeHead(200, {"Content-Type": "text/html;charset=UTF-8"});
+        response.write(html);
+        response.end();
+   };
+   
+   function reloadCampaignData(){
+        var solrBody;
+        request({ uri:campaignUrl}, function (error, response, body) {
+            solrBody = body;
+            console.log(body);
+        });
+        while(solrBody === undefined) {
+          require('deasync').runLoopOnce();
+        }
+        var solrdata = JSON.parse(solrBody);
+        campaignData = solrdata.response.docs;
+   };
+   
    function getExactMatchMultiplier ()
    {
        return exactMatchMultiplier;
@@ -111,7 +156,7 @@ String.prototype.turkish = function () {
    
    function getForCampaignQueryInfo (searchKeyword,multiplier,highestRank,promMaxRankVal)
    {
-           
+            
         var campaignQuery = "campaignQuery={!edismax  bf=''}ProductID:PRODUCTID AND IsInCampaign:true";
         var campaignExpr = "map(exists($campaignQuery),1,1,"+promMaxRankVal+",0)^";
       
@@ -133,10 +178,41 @@ String.prototype.turkish = function () {
         return [];
     };
     
+     function getSOLRForCampaignQueryInfo (campDoc,multiplier,highestRank,promMaxRankVal)
+   {
+           
+        var campaignQuery = "campaignQuery_PRODUCTID={!edismax  bf=''}ProductID:PRODUCTID AND IsInCampaign:true";
+        var campaignExpr = "map(exists($campaignQuery_PRODUCTID),1,1,"+promMaxRankVal+",0)^";
+         
+        var type = campDoc.CampaignType;
+        var filter = campDoc.CampaignFilter;
+        
+        if (type === "Brand") {
+           campaignQuery = campaignQuery.replace(/IsInCampaign/,"IsInCampaignBrand");
+        }else if (type === "Category") {
+           campaignQuery = campaignQuery.replace(/IsInCampaign/,"IsInCampaignCategory");
+        };
+        
+        var pids = campDoc.ProductID;
+        var maxVal = pids.length;
+        var rval = Math.random();
+        var index = Math.floor(rval * maxVal);
+        var promotedProductID = pids[index];
+        console.log("MATCHED To CAMPAIGN keyword:"+promotedProductID+":"+maxVal+":"+index+":"+rval+":"+type+":"+filter);
+        var rankVal = Math.pow(multiplier, 2*highestRank + 2);
+        campaignQuery = campaignQuery.replace(/PRODUCTID/g,promotedProductID);
+        campaignExpr = campaignExpr.replace(/PRODUCTID/g,promotedProductID);
+        campaignExpr = campaignExpr+rankVal;
+        return [campaignExpr,campaignQuery];
+      
+    };
+    
    exports.isInCampaign = isInCampaign;
    exports.getProductIDs = getProductIDs;
    exports.getForCampaignQueryInfo = getForCampaignQueryInfo;
    exports.getExactMatchMultiplier = getExactMatchMultiplier;
+   exports.getCampaignData = getCampaignData;
+   exports.reloadCampaignData = reloadCampaignData;
    
 /*
    <add>

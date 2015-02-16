@@ -100,9 +100,10 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     patternArray = [];
     var tries = 0;
     var j = -1;
-    for (var id in highlighting) {
+     
+    for (var j in docs) {
         tries++;
-        j++;
+        var id = docs[j]['ProductID'];
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
             var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
@@ -133,8 +134,9 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     
     counter = 0;
     j = 0;
-     for (var id in highlighting) {
-        j++;
+     for (var j in docs) {
+        tries++;
+        var id = docs[j]['ProductID'];
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
             var value = origvalue.replace(/<em>|<\/em>/g,"");

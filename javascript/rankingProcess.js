@@ -4,6 +4,7 @@
  * 
  * @type type
  */
+
 var querystring = require("querystring"),
         fs = require("fs"),
         formidable = require("formidable");
@@ -16,17 +17,17 @@ var url = require('url');
 var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
+var nodeApp = require("./app.js");
 
-var host = '192.168.191.148';
+var host = '192.168.191.150';
 //var host = 'localhost';
 var port = '8080';
-var solrpath = '/migrossolr/ProductsCoreOnlySanal/myselect?';
-var solrpathSuggest = '/migrossolr/ProductsCoreOnlySanal/suggest_topic?';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
 var reRankDocs = 5000;
 var reRankWeight = 1000;
 var campaignInfo = require("./campaignInfo");
+var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 //InPromotion_STOREID with rankling  4,7 or 9 will be inserted based on the discountPrefLev - discount prefrence level-kampanya duyarliligi 
 //and all other adjusted
@@ -43,14 +44,17 @@ var rankOrder = {
     NumberOfClicksGrade: 7,
     AmountGrade: 8,
     OrderCountGrade: 9,
-    BrandName: 10,
-    BrandName_TR: 10,
-    ProductFeatures: 10,
-    ProductFeatures_TR: 10,
-    Description: 10,
-    Description_TR: 10,
-    ProductProperty: 10,
-    ProductProperty_TR: 10};
+    IsInCampaign:10,
+    IsInCampaignCateory:10,
+    IsInCampaignBrand:10,
+    BrandName: 11,
+    BrandName_TR: 11,
+    ProductFeatures: 11,
+    ProductFeatures_TR: 11,
+    Description: 11,
+    Description_TR: 11,
+    ProductProperty: 11,
+    ProductProperty_TR: 11};
 
 var flList = [
     'ProductID',
@@ -63,7 +67,6 @@ var flList = [
     'OrderCount',
     'BrandName',
     'ProductFeatures',
-    'Description',
     'ProductProperty',
     'PathLevel2',
     'IsMigroskop',
@@ -81,6 +84,7 @@ var flList = [
     'UnitVal_V',
     'UnitVal_WATT',
     'UnitVal_W',
+    'IsInCampaign',
     'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
     'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
 ];
@@ -122,10 +126,25 @@ var facetFields = [
      '{!ex=customer}exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
  ];
 
-
+ 
 //InPromotion_STOREID with rankling  4,7 or 9 will be inserted based on the discountPrefLev - discount prefrence level-kampanya duyarliligi 
 //and all other adjusted
 
+function getSolrPath ( type)
+{
+    //var d = new Date();
+    //var n = d.getDay();
+    //var coreName = "ProductsCore"+days[n];
+    var coreName = nodeApp.getActiveCoreName ();
+    var path = "";
+    if (type === "Prod"){
+        path  = '/migrossolr/'+coreName+'/myselect?';
+    }else if (type === "Auto"){
+        path  = '/migrossolr/'+coreName+'/suggest_topic?';
+    }
+    
+    return path;
+};
 
 function getFL()
 {
@@ -439,7 +458,7 @@ function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, s
             var sortExprTemp = sortExpr.replace("FIELDNAME", newFieldName);
             sortExprTemp = sortExprTemp + rankVal;
             allSortExprs.push(sortExprTemp);
-        } else if (field.match(/InPromotion/)) {
+        } else if (field.match(/InPromotion|IsInCampaignCategory|IsInCampaignBrand|IsInCampaign/)) {
             var constVal = getConstVal(index, sortedRankOrder, highestRank,multiplier);
             promConstVal = Math.max(constVal,promConstVal);
             
@@ -500,12 +519,13 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
     prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank);
 
     //Check keyword in campaign
-    var campaignQueryInfo = campaignInfo.getForCampaignQueryInfo (searchKeyword,multiplier,highestRank,promMaxRankVal);
-    var campExpr = "";
-    var campQuery = "";
-    if (campaignQueryInfo.length > 0){
-        campExpr = campaignQueryInfo[0]+" ";
-        campQuery = "&"+campaignQueryInfo[1];
+    var campaignQueryInfo = campaignInfo.getCampaignData (multiplier,highestRank,promMaxRankVal);
+    var campExpr = campaignQueryInfo.campExpr;
+    var campQuery = campaignQueryInfo.campQuery;
+ 
+    if (campExpr.length > 0){
+        campExpr = campExpr.join(" ")+" ";
+        campQuery = "&"+campQuery.join("&");
     }
     
     qq = "qq=" + qq;
@@ -981,11 +1001,8 @@ function addFacetingFields (storeid,customerid,custsegmentid,otherFacets)
 
 function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword, start,facetList)
 {
-   
-   //If camapin keyword, maket is smalle
-    if (campaignInfo.isInCampaign(queryKeyword)){
-        queryKeyword = queryKeyword.toLowerCase();
-    }
+    
+    var coreSearchPhrase = "ProductModelName:KEYWORD OR SearchKeywordValue:KEYWORD OR PathLevel2:KEYWORD OR ProductFeatures:KEYWORD OR ProductProperty:KEYWORD OR BrandName:KEYWORD";
     
    //calculate facet boolean expression
     //var fPair = makeFilterBooleanExpr() (facetList,customerid);
@@ -1020,9 +1037,10 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
         localFlList.splice(localFlList.length-2,2);
     }
     queryKeyword = encodeURIComponent(queryKeyword);
+    coreSearchPhrase = coreSearchPhrase.replace (/KEYWORD/g,queryKeyword);
     var fl = "fl=" + localFlList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid).replace(/CUSTOMERID/g,customerid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
-    var solrURL = "q=StoreID:" + storeid + " AND (turkishtext:" + queryKeyword +
+    var solrURL = "q=StoreID:" + storeid + " AND (" + coreSearchPhrase +
             " OR text:" + queryKeyword +" OR ProductModelNameExact:"+queryKeyword+
             ")&" + fl + "&" + sortQuery + "&" + pfqfOnlyQuery + "&" + extraOpts;
     solrURL = solrURL + "&" + faceFields + "&" + hlPars;
@@ -1048,7 +1066,7 @@ function prepareSuggestQueryExt(customerid, storeid, discountPrefLev, custsegmen
     var sortQuery = prepareBFExpression2Suggest(localRankOrder, customerid, queryKeyword);
  
     queryKeyword = encodeURIComponent(queryKeyword);
-    var solrURL = "q=" + queryKeyword+"&" + sortQuery+"&fl=PSIID_"+storeid+",ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";
+    var solrURL = "q=" + queryKeyword+"&fq=StoreID:"+storeid+"&" + sortQuery+"&fl=PSIID_"+storeid+",ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";
 
     return solrURL;
 
@@ -1061,10 +1079,16 @@ function prepareBrowseQuery(query)
     var storeid = query.storeid;
     var custsegmentid = query.custsegmentid;
     var discountlevel = query.discountlevel;
-
+    var showsolrreq = query.showsolrreq;
+    
+    var debugOpts = "";
+    if (typeof debug !== 'showsolrreq' && showsolrreq == 'on'){
+        debugOpts = "&showsolrreq=on"; 
+    }
+    
     /* q=kurabiye&startindex=0&endindex=10&customerid=127066&storeid=2185&discountlevel=1&custsegmentid=107&start=10 */
     var browseURL = basepath + "q=" + queryKeyword + "&customerid=" + customerid + "&storeid=" + storeid + "&discountlevel=" +
-            discountlevel + "&custsegmentid=" + custsegmentid + "&";
+            discountlevel + "&custsegmentid=" + custsegmentid + debugOpts+"&";
     return browseURL;
 }
 
@@ -1089,7 +1113,7 @@ function prepareSOLRQuery(request)
     }
 
     var solrQuery = prepareSOLRQueryExt(customerid, storeid, discountlevel, custsegmentid, gradeWindowLen, queryKeyword, start);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    var solrURL = "http://" + host + ":" + port + getSolrPath("Prod") + solrQuery;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 }
@@ -1116,7 +1140,7 @@ function prepareReRankSOLRQuery(request)
     }
 
     var solrQuery = prepareReRankSOLRQueryExt(customerid, storeid, discountlevel, custsegmentid, gradeWindowLen, queryKeyword, start, reRankDocs, reRankWeight);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    var solrURL = "http://" + host + ":" + port + getSolrPath("Prod") + solrQuery;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 }
@@ -1143,7 +1167,7 @@ function prepareBQOnlySOLRQuery(request)
     }
 
     var solrQuery = prepareOnlyBQOnlyQueryExt(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    var solrURL = "http://" + host + ":" + port + getSolrPath("Prod") + solrQuery;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 }
@@ -1318,7 +1342,7 @@ function prepareBQOnlySOLRQuery2(request)
     }
     
     var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery+debugOpts;
+    var solrURL = "http://" + host + ":" + port + getSolrPath("Prod") + solrQuery+debugOpts;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 };
@@ -1345,7 +1369,7 @@ function prepareSuggestQuery(request)
     }
 
     var solrQuery = prepareSuggestQueryExt(customerid, storeid, discountlevel, custsegmentid, queryKeyword);
-    var solrURL = "http://" + host + ":" + port + solrpathSuggest + solrQuery;
+    var solrURL = "http://" + host + ":" + port + getSolrPath("Auto") + solrQuery;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 };
@@ -1405,7 +1429,7 @@ function handlePostSolrRequest(postBody)
     console.log ("rows:"+rows);
     
     var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery+"&rows="+rows+debugOpts;
+    var solrURL = "http://" + host + ":" + port + getSolrPath("Prod") + solrQuery+"&rows="+rows+debugOpts;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 }
@@ -1422,7 +1446,14 @@ function handleSortSolrRequest(postBody)
     var discountlevel = postBody["campaignSensitivity"];
     var sortkeyword = postBody['sortkeyword'];
     var showsolrreq = false;
-
+    var debug = postBody["debug"];
+    
+    var debugOpts = "";
+    if (typeof debug !== 'undefined' && debug){
+        debugOpts = "&indent=true&debugQuery=true&debug.explain.structured=true"; 
+    }
+    
+    
     var facetList = getPostedFacetQueryParam(postBody);
     
     console.log("Received URL parameters  q=" + queryKeyword +
@@ -1435,7 +1466,7 @@ function handleSortSolrRequest(postBody)
     }
 
     var solrQuery = prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, start,sortkeyword,facetList);
-    var solrURL = "http://" + host + ":" + port + solrpath + solrQuery;
+    var solrURL = "http://" + host + ":" + port + getSolrPath("Prod") + solrQuery+debugOpts;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
 }; 

@@ -267,7 +267,7 @@ declare %updating function local:addCRMDataIntoProducts ()
                           map:entry($pid,$prodIDField))
                  
      for tumbling window $prodGroup in fn:doc("CRM")//record
-          start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+          start $first next $second when fn:true()
           end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
    
           let $pid := $prodGroup[1]/PRODUCT_ID 
@@ -282,7 +282,7 @@ declare %updating function local:addCRMDataIntoProducts ()
                     for $crec in $prodGroup
 		      let $cid := $crec/CUSTOMER_ID/text()
 		      let $rFlag := $crec/RFM_SANAL/text()
-		      where $rFlag ne "İnaktif"
+                      where $rFlag ne "İnaktif"
                       return 
                         <field name="CustomersPurchased">{$cid}</field>
                   let $sumSolrFields := (<field name="Amount">{$totalAmount}</field>,
@@ -306,7 +306,7 @@ declare %updating function local:addCRMDataIntoProducts ()
          (:,
          let $allAddedMap := map:new(
             for tumbling window $prodGroup in fn:doc("CRM")//record
-                start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                start $first next $second when fn:true()
                 end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                   return map:entry($prodGroup[1]/PRODUCT_ID/text(),"1"))
           
@@ -396,7 +396,7 @@ declare   %updating function local:addPriceDataIntoProducts ($shortProdMap as ma
    let $priceMap := 
           map:new(
           for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record
-                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
                     return
@@ -477,7 +477,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
         let $priceMap := 
           map:new(
           for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
-                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
                     return
@@ -502,7 +502,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
         
                
         for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
-                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $psiPid := $psiRecordGroup[1]/PRODUCT_ID/text()
                     let $psiIDs := $psiRecordGroup/PRODUCT_SALES_INFO_ID/text()
@@ -567,7 +567,7 @@ declare   %updating function local:dumpPriceDataIntoFile ($outFileName as xs:str
         let $priceMap := 
           map:new(
           for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record
-                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
                     return
@@ -671,9 +671,11 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                        {$pidField} 
                        {$pmid}
                        {$pmn}
+                       {$pDetail}
                        {$desc}
                        <field name="IsMigroskop">{$isMigroskop}</field>
-                      
+                     
+                       {local:transTurkishChars("ProductMoreDetail",$pDetail/text())}  
                        {local:transTurkishChars("ProductModelName",$pmn/text())}
                        {local:transTurkishChars("Description",$desc/text())}
                  
@@ -776,7 +778,7 @@ let $mapMD :=
  let $priceMap := 
           map:new(
           for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
-                  start $first next $second when $first/PRODUCT_ID eq $second/PRODUCT_ID
+                  start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
                     return

@@ -1,9 +1,11 @@
 #!/bin/bash
-ROOT=$(cd $(dirname "$0"); pwd)/SQLExtracts
+set -x #echo on
+
+ROOT=$(cd $(dirname "$0"); pwd)
 echo "Current folder = ${ROOT}"
 
 echo "Pulling CRM data from Oracle Database "
-$BASEX_HOME80/bin/basex -bsqlfile=sqlStmts/CRM.sql -boutputfile=SQLExtracts/CRM.sql.xml -bmonth=0 xquery/runSqlCommand.xq
+$BASEX_HOME80/bin/basex -bsqlfile=sqlStmts/CRM.sql -boutputfile=SQLExtracts/CRM.sql.xml -bmonth=0 $ROOT/xquery/runSqlCommand.xq
 
 echo "Indexing CRM data in Basex XML database"
 $BASEX_HOME/bin/basexclient -p1984 -Padmin -Uadmin << EOF

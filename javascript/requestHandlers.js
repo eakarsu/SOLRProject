@@ -178,7 +178,7 @@ function setupResults(body,storeid,custsegmentid,query) {
     var facets = findFacetingValues(solrdata,customerid,storeid,query);
     
     //swap first and third value if keyword macthes to a campaign
-    if (campaignInfo.isInCampaign(queryKeyword) && docs.length >= 3 ){
+    if ((docs[0]['IsInCampaign'] || docs[0]['IsInCampaignBrand']||docs[0]['IsInCampaignCategory']) && docs.length >= 3 ){
         var temp = docs[2];
         docs[2] = docs[0];
         docs[0] = temp;
@@ -411,7 +411,7 @@ filters: [
     "filterResultLimit": 5,
 */
 
-function reformatSolrResult (solrBody,postBody)
+function reformatSolrResultFirst (solrBody,postBody)
 {
         var migrosResp = {};
         var solrdata = JSON.parse(solrBody);
@@ -531,6 +531,127 @@ function reformatSolrResult (solrBody,postBody)
     
 };
 
+function reformatSolrResult (solrBody,postBody)
+{
+        var migrosResp = {};
+        var solrdata = JSON.parse(solrBody);
+        var solrDocs = solrdata.response.docs;
+        migrosResp['totalFound'] = solrdata.response.numFound;
+        var docs = new Array();
+        var flist = rankingProcess.getFL();
+                 
+        var custsegmentid = postBody['customerSegment'];
+        var customerid = postBody["customerId"];
+        var storeid = postBody["store"];
+        
+        var filterResultLimit = postBody['filterResultLimit'];
+        var debugPar = postBody["debug"];
+    
+        var debug = false;
+        if (typeof debugPar !== 'undefined' && debugPar){
+            debug = true;
+        }
+       console.log ("DEBUG her ein POST:"+debug);
+       
+        for (j = 0; j < solrDocs.length; j++) {
+            docs[j] = {};
+            for (k in flist){
+                var field = flist[k];
+                var fieldName = field.replace(/SEGMENTID/g,custsegmentid).replace(/STOREID/g,storeid).replace(/:.*/g,"");
+                var fieldVal = solrDocs[j][fieldName];
+                if (fieldName === 'ProductMoreDetail'){
+                    fieldVal = fieldVal.replace(/\r\n|\n/g, '');
+                } 
+
+                var fieldName = fieldName.replace(/_[0-9]+/,""); 
+                if (!debug){
+                    if (fieldName === "PSIID"){
+                      docs[j]["PSIID"] = fieldVal;
+                    }
+                    else if (fieldName === "ProductID"){
+                        docs[j]["ProductID"] = fieldVal; 
+                    }
+                }
+                else{
+                    docs[j][fieldName] = fieldVal;
+                }
+            }
+            /*for (var prop  in row){
+                console.log (prop+":"+row[prop]);
+            }*/
+             
+        } ;
+        
+        migrosResp.docs = docs;
+        var facets = findFacetingValues(solrdata,customerid,storeid,{});
+
+        
+       // make default value of those to 0 : inPromotion, myOldOrders, migroskop 
+        if (typeof facets.CustomersPurchased.facetCount === 'undefined'){
+            facets.CustomersPurchased.facetCount = 0;
+        }
+        if (typeof facets.InPromotion.facetCount === 'undefined'){
+            facets.InPromotion.facetCount = 0;
+        }
+        if (typeof facets.IsMigroskop.facetCount === 'undefined'){
+            facets.IsMigroskop.facetCount = 0;
+        }
+        if (typeof facets.IsMCCProduct.facetCount === 'undefined'){
+            facets.IsMCCProduct.facetCount = 0;
+        }
+        var filters = new Array();
+        filters [0] = {k: "myFavorites", v: facets.CustomersFavourite.facetCount};
+        filters [1] = {k: "myOldOrders", v: facets.CustomersPurchased.facetCount};
+        filters [2] = {k: "inPromotion", v: facets.InPromotion.facetCount};
+        filters [3] = {k: "migroskop", v: facets.IsMigroskop.facetCount};
+        filters [4] = {k: "mcc", v: facets.IsMCCProduct.facetCount};
+
+        var categories = [];
+        
+        for (var j=0;j<Math.min(facets.PathLevel2.length,filterResultLimit);j++){
+            categories.push({"n": facets.PathLevel2[j].facetValue, c: facets.PathLevel2[j].facetCount});
+        }
+        filters[5] = {k:"categories",v:categories};
+
+        var brands = [];
+        for (var j=0;j<Math.min(facets.BrandName.length,filterResultLimit);j++){
+            brands.push({"n": facets.BrandName[j].facetValue, c: facets.BrandName[j].facetCount});
+        }
+        filters[6] = {k:"brands",v:brands};
+
+        var units = [];
+        fillUnitFacetRanges(facets,units);
+        filters[7] = {k:"units",v:units};
+
+        var properties = [];
+        for (var j=0;j<Math.min(facets.ProductProperty.length,filterResultLimit);j++){
+            properties.push({"n": facets.ProductProperty[j].facetValue, c: facets.ProductProperty[j].facetCount});
+        }
+        filters[8] = {k:"productProperties",v:properties};
+
+        migrosResp.filters = filters;
+        
+        //parse debug output
+        var debugData = parseDebugExplain(solrdata);
+        //Use PSI id instead of products
+        //debugExplainResult[pid] = {"score":totalScore,"details":scoreArray};
+        var debugDataPsi = {};
+        for (var j = 0; j < solrDocs.length; j++) {
+            var psi = docs[j]['PSIID'];
+            var pid = docs[j]['ProductID'];
+            debugDataPsi[psi] = {};
+            debugDataPsi[psi] = debugData[pid];
+            console.log (psi +" <- "+pid);
+        }
+        
+       
+        //migrosResp.debugData = debugData;
+        migrosResp.debugData = debugDataPsi;
+        
+        return migrosResp;
+    
+};
+
 /*
  * //Promotion
  /FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelNameExact:/ -> product(map(and(termfreq(InPromotion_1005,true),exists($exactqq)),1,1,1,0),67108868)
@@ -583,11 +704,11 @@ function parseDebugExplain (solrdata)
                 var funcDesc = nextFun ['description'];
                 
                 //no need to return any partial score that is 0 or match = false
-                if ((!funMatch) || funTotalScore < 0.1){
+                if ((!funMatch) || funTotalScore === 0){
                     continue;
                 }
                 
-                var selectedRanFuncName = "";
+                var selectedRanFuncName = funcDesc;
                 //InPromotion
                 if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelNameExact:/)){
                     selectedRanFuncName = "InPromotion";

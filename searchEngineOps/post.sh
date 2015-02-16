@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -x #echo on
 
 FILES=$*
 host=$1
@@ -21,8 +22,9 @@ corename=$3
 URL=http://${host}:8080/${webpath}/${corename}/update
 
 for f in "${@:4}"; do
-  echo Posting file $f to $URL
+  echo "$(date):" Posting file $f to $URL
   curl $URL --data-binary @$f -H 'Content-type:application/xml' 
+  echo "$(date):" Done with Posting file $f to $URL
 done
 
 curl "$URL?softCommit=true"

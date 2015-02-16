@@ -1,5 +1,7 @@
 #!/bin/bash
-ROOT=$(cd $(dirname "$0"); pwd)/SQLExtracts
+set -x #echo on
+
+ROOT=$(cd $(dirname "$0"); pwd)
 echo "Current folder = ${ROOT}"
 echo "indexing click sterams data itable in SOLR"
 $BASEX_HOME/bin/basexclient -p1984 -Padmin -Uadmin << EOF
