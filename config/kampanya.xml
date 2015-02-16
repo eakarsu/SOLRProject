@@ -1,0 +1,60 @@
+<add>
+  <doc>
+    <field name="CampaignType" >Keyword</field>
+    <field name="CampaignFilter" >Ariel</field>
+    <field name="CampaignStartDate">2015-02-14T02:00:00Z</field>
+    <field name="CampaignEndDate">2015-02-24T02:00:00Z</field>
+    <field name="ProductID">852106</field>
+    <field name="ProductID">852108</field>
+    <field name="ProductID">852105</field>
+    <field name="ProductID">497388</field>
+    <field name="ProductID">795642</field>
+  </doc>
+   <doc>
+    <field name="CampaignType" >Keyword</field>
+    <field name="CampaignFilter" >peynir</field>
+    <field name="CampaignStartDate">2015-02-14T02:00:00Z</field>
+    <field name="CampaignEndDate">2015-02-24T02:00:00Z</field>
+    <field name="ProductID">808938</field>
+    <field name="ProductID">809915</field>
+    <field name="ProductID">845991</field>
+    <field name="ProductID">791714</field>
+    <field name="ProductID">775152</field>
+  </doc>
+  <doc>
+    <field name="CampaignType" >Keyword</field>
+    <field name="CampaignFilter" >çay</field>
+    <field name="CampaignStartDate">2015-02-14T02:00:00Z</field>
+    <field name="CampaignEndDate">2015-02-24T02:00:00Z</field>
+    <field name="ProductID">110984</field>
+    <field name="ProductID">699845</field>
+    <field name="ProductID">745870</field>
+    <field name="ProductID">818527</field>
+
+  </doc>
+  <doc>
+    <field name="CampaignType" >Keyword</field>
+    <field name="CampaignFilter" >pilic</field>
+    <field name="CampaignStartDate">2015-02-14T02:00:00Z</field>
+    <field name="CampaignEndDate">2015-02-24T02:00:00Z</field>
+    <field name="ProductID">415527</field>
+    <field name="ProductID">213916</field>
+    <field name="ProductID">213937</field>
+    <field name="ProductID">194767</field>
+    <field name="ProductID">180149</field>
+  </doc>
+  
+  <doc>
+  <field name="CampaignType" >Brand</field>
+    <field name="CampaignFilter" >Pınar</field>
+    <field name="CampaignStartDate">2015-02-14T02:00:00Z</field>
+    <field name="CampaignEndDate">2015-02-24T02:00:00Z</field>
+  </doc>
+  
+  <doc>
+  <field name="CampaignType" >Category</field>
+    <field name="CampaignFilter" >Meyve Suyu</field>
+    <field name="CampaignStartDate">2015-02-14T02:00:00Z</field>
+    <field name="CampaignEndDate">2015-02-24T02:00:00Z</field>
+  </doc>
+</add>
