@@ -45,7 +45,7 @@ var rankOrder = {
     AmountGrade: 8,
     OrderCountGrade: 9,
     IsInCampaign:10,
-    IsInCampaignCateory:10,
+    IsInCampaignCategory:10,
     IsInCampaignBrand:10,
     BrandName: 11,
     BrandName_TR: 11,
@@ -85,6 +85,8 @@ var flList = [
     'UnitVal_WATT',
     'UnitVal_W',
     'IsInCampaign',
+    'IsInCampaignCategory',
+    'IsInCampaignBrand',
     'myFavorites:exists(query({!v="CustomersFavourite:CUSTOMERID"}))',
     'myOldOrders:exists(query({!v="CustomersPurchased:CUSTOMERID"}))'
 ];
@@ -519,7 +521,7 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
     prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, sortExpr2, customerid,multiplier,highestRank);
 
     //Check keyword in campaign
-    var campaignQueryInfo = campaignInfo.getCampaignData (multiplier,highestRank,promMaxRankVal);
+    var campaignQueryInfo = campaignInfo.getCampaignData (multiplier,highestRank,promMaxRankVal,searchKeyword);
     var campExpr = campaignQueryInfo.campExpr;
     var campQuery = campaignQueryInfo.campQuery;
  

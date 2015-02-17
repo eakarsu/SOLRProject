@@ -74,13 +74,15 @@ String.prototype.turkish = function () {
     * @param {type} promMaxRankVal
     * @returns {undefined}
     */
-   function getCampaignData(multiplier,highestRank,promMaxRankVal){
+   function getCampaignData(multiplier,highestRank,promMaxRankVal,searchKeyword){
         var campExpr = [];
         var campQuery = [];
         for (x in campaignData){
-            var funcPair = getSOLRForCampaignQueryInfo (campaignData[x],multiplier,highestRank,promMaxRankVal);
-            campExpr.push(funcPair[0]);
-            campQuery.push(funcPair[1]);
+            var funcPair = getSOLRForCampaignQueryInfo (campaignData[x],multiplier,highestRank,promMaxRankVal,searchKeyword);
+            if (funcPair.length > 0){
+                campExpr.push(funcPair[0]);
+                campQuery.push(funcPair[1]);
+            }
         }
         return {campExpr:campExpr,campQuery:campQuery};
    };
@@ -177,8 +179,32 @@ String.prototype.turkish = function () {
         }
         return [];
     };
-    
-     function getSOLRForCampaignQueryInfo (campDoc,multiplier,highestRank,promMaxRankVal)
+  
+   function pickRandomProduct (campDoc,searchKeyword,filter)
+   {
+       var regex = new RegExp(searchKeyword,"gi");
+       var pmns = campDoc.ProductModelName;
+       var matchSet = [];
+       for (var k in pmns){
+           console.log ("looking for "+pmns[k]);
+           if (pmns[k].match(regex)){
+               matchSet.push(k);
+               console.log ("MATCH :"+k);
+           }
+       }
+       if (matchSet.length === 0){
+           return null;
+       }else{
+            var maxVal = matchSet.length;
+            var rval = Math.random();
+            var index = Math.floor(rval * maxVal);
+            var promotedProductID = campDoc.ProductID[matchSet[index]];
+            console.log("MATCHED To CAMPAIGN keyword:"+promotedProductID+":"+pmns[matchSet[index]]+":"+filter);
+            return promotedProductID;
+        }
+   };
+   
+     function getSOLRForCampaignQueryInfo (campDoc,multiplier,highestRank,promMaxRankVal,searchKeyword)
    {
            
         var campaignQuery = "campaignQuery_PRODUCTID={!edismax  bf=''}ProductID:PRODUCTID AND IsInCampaign:true";
@@ -192,19 +218,24 @@ String.prototype.turkish = function () {
         }else if (type === "Category") {
            campaignQuery = campaignQuery.replace(/IsInCampaign/,"IsInCampaignCategory");
         };
-        
+         
+        /*
         var pids = campDoc.ProductID;
         var maxVal = pids.length;
         var rval = Math.random();
         var index = Math.floor(rval * maxVal);
         var promotedProductID = pids[index];
-        console.log("MATCHED To CAMPAIGN keyword:"+promotedProductID+":"+maxVal+":"+index+":"+rval+":"+type+":"+filter);
-        var rankVal = Math.pow(multiplier, 2*highestRank + 2);
-        campaignQuery = campaignQuery.replace(/PRODUCTID/g,promotedProductID);
-        campaignExpr = campaignExpr.replace(/PRODUCTID/g,promotedProductID);
-        campaignExpr = campaignExpr+rankVal;
-        return [campaignExpr,campaignQuery];
-      
+        */
+        var promotedProductID = pickRandomProduct (campDoc,searchKeyword,filter);
+        if (promotedProductID !== null ){
+            
+            var rankVal = Math.pow(multiplier, 2*highestRank + 2);
+            campaignQuery = campaignQuery.replace(/PRODUCTID/g,promotedProductID);
+            campaignExpr = campaignExpr.replace(/PRODUCTID/g,promotedProductID);
+            campaignExpr = campaignExpr+rankVal;
+            return [campaignExpr,campaignQuery];
+        }
+        return [];
     };
     
    exports.isInCampaign = isInCampaign;

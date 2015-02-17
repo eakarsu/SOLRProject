@@ -179,6 +179,7 @@ function setupResults(body,storeid,custsegmentid,query) {
     
     //swap first and third value if keyword macthes to a campaign
     if ((docs[0]['IsInCampaign'] || docs[0]['IsInCampaignBrand']||docs[0]['IsInCampaignCategory']) && docs.length >= 3 ){
+        console.log ("Swapping 1. and 3. document");
         var temp = docs[2];
         docs[2] = docs[0];
         docs[0] = temp;
@@ -582,6 +583,14 @@ function reformatSolrResult (solrBody,postBody)
              
         } ;
         
+        //swap first and third value if keyword macthes to a campaign
+        if ((docs[0]['IsInCampaign'] || docs[0]['IsInCampaignBrand']||docs[0]['IsInCampaignCategory']) && docs.length >= 3 ){
+            console.log ("Swapping 1. and 3. document ");
+            var temp = docs[2];
+            docs[2] = docs[0];
+            docs[0] = temp;
+        }
+    
         migrosResp.docs = docs;
         var facets = findFacetingValues(solrdata,customerid,storeid,{});
 
@@ -709,16 +718,22 @@ function parseDebugExplain (solrdata)
                 }
                 
                 var selectedRanFuncName = funcDesc;
+                
                 //InPromotion
                 if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelNameExact:/)){
-                    selectedRanFuncName = "InPromotion";
+                    selectedRanFuncName = "InPromotionExact";
                 }
- 
                 //Kampanya
-                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductID.*IsInCampaign:T/)){
-                    selectedRanFuncName = "Kampanya";
+                else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*IsInCampaignCategory.*query.*ProductModelNameExact:/)){
+                    selectedRanFuncName = "IsInCampaignCategoryExact";
                 }
-
+                else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*IsInCampaignBrand.*query.*ProductModelNameExact:/)){
+                    selectedRanFuncName = "IsInCampaignBrandExact";
+                }
+                else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*IsInCampaign.*query.*ProductModelNameExact:/)){
+                    selectedRanFuncName = "IsInCampaignExact";
+                }
+                
                 else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*CustomersFavourite.*query.*ProductModelNameExact:/)){
                     selectedRanFuncName = "CustomersFavouriteExact";
                 }
@@ -762,6 +777,23 @@ function parseDebugExplain (solrdata)
                 else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductModelName:.*scale.*int.*OrderCount/)){
                     selectedRanFuncName = "OrderCount";
                 }
+                
+                //InPromotion
+                if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelName:/)){
+                    selectedRanFuncName = "InPromotion";
+                }
+                //Kampanya
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductID.*IsInCampaignCategory:T/)){
+                    selectedRanFuncName = "IsInCampaignCategory";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductID.*IsInCampaignBrand:T/)){
+                    selectedRanFuncName = "IsInCampaignBrand";
+                }
+                else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductID.*IsInCampaign:T/)){
+                    selectedRanFuncName = "IsInCampaign";
+                }
+                
+                
                 //console.log ("Description Func="+selectedRanFuncName+" :"+funcDesc);
                 scoreArray.push ({"score":funTotalScore,"rankFunc":selectedRanFuncName});
             }
@@ -772,7 +804,7 @@ function parseDebugExplain (solrdata)
         }
         return debugExplainResult;
 }
-
+ 
 /*
          * "UnitVal_GR":{
         "counts":[
