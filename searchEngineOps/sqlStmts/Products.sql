@@ -6,7 +6,8 @@ SELECT pm.PRODUCT_MODEL_ID,
   pm.BRAND_ID,
   pm.IS_MIGROSKOP,
   p.PRODUCT_ID,  
-  pm.stock_model
+  pm.stock_model,
+  pm.IS_NEW
 FROM PRODUCTS p,
   PRODUCT_MODELS pm,
   SHOPS s

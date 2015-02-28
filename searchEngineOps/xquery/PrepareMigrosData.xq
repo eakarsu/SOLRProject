@@ -252,8 +252,153 @@ declare function local:getClicksMap () as map(*)
 
       return $mapClicks
 };
-                                                            
+
+declare %updating function local:addCRMCountsIntoProducts () 
+{
+     
+     let $allProds := fn:doc("AccumulatedProducts")
+     let $productsMap :=
+            map:new(
+              for $rec in $allProds//doc
+                  let $prodIDField := $rec/field[@name eq "ProductID"]
+                  let $pid := $prodIDField/text()
+                    return
+                          map:entry($pid,$prodIDField))
+       
+      let $crmCountsMap :=
+            map:new(
+              for $rec in fn:doc("CRMCounts")//record
+                  let $pid := $rec/PRODUCT_ID/text()
+                    return
+                          map:entry($pid,$rec))
+     
+     let $custCountsMap :=   
+         map:new(                 
+           for tumbling window $prodGroup in fn:doc("Customers")//record
+                start $first next $second when fn:true()
+                end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+         
+                let $pid := $prodGroup[1]/PRODUCT_ID 
+                return 
+                  let $prodEntry := map:get($productsMap,$pid)/..          
+                  return
+                    if (fn:empty($prodEntry))   then  ()
+                    else
+                        let $totalAmount := sum($prodGroup//AMOUNT/text()) 
+                        let $totalOrderCount := sum($prodGroup//ORDER_COUNT)
+                        let $rec :=
+                          <record>
+                            <PRODUCT_ID>{$pid}</PRODUCT_ID>
+                            <AMOUNT>{$totalAmount}</AMOUNT>
+                            <ORDER_COUNT>{$totalOrderCount}</ORDER_COUNT>
+                          </record>
+
+                        return map:entry($pid,$rec))
+                        
+     return
+       for $pid in map:keys($productsMap)
+         let $prodEntry := map:get($productsMap,$pid)/.. 
+         let $crmCnt := map:get($crmCountsMap,$pid)
+         let $cstCnt := map:get($custCountsMap,$pid)
+         let $amount := 0
+         let $orderCount := 0
+         let $amount := if (fn:exists ($crmCnt)) then $amount + $crmCnt/AMOUNT/text() else $amount
+         let $amount := if (fn:exists ($cstCnt)) then $amount + $cstCnt/AMOUNT/text() else $amount
+         let $orderCount := if (fn:exists ($crmCnt)) then $orderCount + xs:integer($crmCnt/ORDER_COUNT/text()) else $orderCount
+         let $orderCount := if (fn:exists ($cstCnt)) then $orderCount + xs:integer($cstCnt/ORDER_COUNT/text()) else $orderCount
+         let $sumSolrFields := (<field name="Amount">{$amount}</field>,
+                                       <field name="OrderCount">{$orderCount}</field>)
+         return
+         insert nodes ($sumSolrFields) as last into $prodEntry
+                        
+};  
+
+declare %updating function local:addOnlineCustomersIntoProducts () 
+{
+      
+     let $allProds := fn:doc("AccumulatedProducts")
+     let $productsMap :=
+            map:new(
+              for $rec in $allProds//doc
+                  let $prodIDField := $rec/field[@name eq "ProductID"]
+                  let $pid := $prodIDField/text()
+                    return
+                          map:entry($pid,$prodIDField))
+                            
+     for tumbling window $prodGroup in fn:doc("Customers")//record
+          start $first next $second when fn:true()
+          end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+   
+          let $pid := $prodGroup[1]/PRODUCT_ID 
+          return 
+            let $prodEntry := map:get($productsMap,$pid)/..          
+            return
+              if (fn:empty($prodEntry))   then  ()
+              else          
+                  let $customers := 
+                    for $crec in $prodGroup
+                      let $cid := $crec/CUSTOMER_ID/text()
+                      group by $cid
+                      return 
+                        <field name="CustomersPurchased">{$cid}</field>
+                        
+                  let $sumSolrFields := ($customers)
+                 
+                       
+                 return
+                   insert nodes ($sumSolrFields) as last into $prodEntry
+}; 
+
 declare %updating function local:addCRMDataIntoProducts () 
+{
+     
+     let $allProds := fn:doc("AccumulatedProducts")
+     let $segments := ("Aburcubur","Çay_Kahve","İçecek","Karma_Az","Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik")
+     let $productsMap :=
+            map:new(
+              for $rec in $allProds//doc
+                  let $prodIDField := $rec/field[@name eq "ProductID"]
+                  let $pid := $prodIDField/text()
+                    return
+                          map:entry($pid,$prodIDField))
+                              
+     for tumbling window $prodGroup in fn:doc("CRM")//record
+          start $first next $second when fn:true()
+          end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
+   
+          let $pid := $prodGroup[1]/PRODUCT_ID 
+          return 
+            let $prodEntry := map:get($productsMap,$pid)/..          
+            return
+              if (fn:empty($prodEntry))   then  ()
+              else
+
+                  let $customers := 
+                    for $crec in $prodGroup
+                      let $cid := $crec/CUSTOMER_ID/text()
+                      let $rFlag := $crec/RFM_SANAL/text()
+                      group by $cid
+                      return 
+                        <field name="CustomersPurchased">{$cid}</field>
+              
+                  let $segData :=
+                    for $segGroup in $prodGroup
+                      let  $sid := $segGroup/SON_SEGMENT/text()
+                      let $sid := fn:concat("10",fn:index-of($segments,$sid))
+                      group by $sid
+                      return
+                        let $segAmount := sum($segGroup//AMOUNT/text())
+                        let $segOrderCount := sum($segGroup//ORDER_COUNT)
+                        let $segFields := (<field name="SegAmount_{$sid}">{$segAmount}</field>,
+                                          <field name="SegOrderCount_{$sid}">{$segOrderCount}</field>)
+                        return $segFields
+                       
+                 return
+                   insert nodes ($segData,$customers) as last into $prodEntry
+                  
+};
+                                                            
+declare %updating function local:addCRMDataIntoProductsOrig () 
 {
      
      let $allProds := fn:doc("AccumulatedProducts")
@@ -280,8 +425,8 @@ declare %updating function local:addCRMDataIntoProducts ()
                   let $totalOrderCount := sum($prodGroup//ORDER_COUNT)
                   let $customers := 
                     for $crec in $prodGroup
-		      let $cid := $crec/CUSTOMER_ID/text()
-		      let $rFlag := $crec/RFM_SANAL/text()
+                      let $cid := $crec/CUSTOMER_ID/text()
+                      let $rFlag := $crec/RFM_SANAL/text()
                       where $rFlag ne "İnaktif"
                       return 
                         <field name="CustomersPurchased">{$cid}</field>
@@ -554,9 +699,10 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
                        let $nAddCarts :=  if (fn:exists($nCart)) then <field name="NumberOfAddCarts">{$nCart}</field>
                                            else ()
    
-                       
+                       let $addedNodes := ($nclicks,$nAddCarts,$priceTuples) 
+                       where fn:exists($addedNodes) and fn:exists($accRecord)
                        return 
-                         insert nodes ($nclicks,$nAddCarts,$priceTuples) as last  into $accRecord
+                         insert nodes $addedNodes as last  into $accRecord
               
 }; 
 
@@ -659,7 +805,9 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                   let $shopID :=   $record/SHOP_ID/text()
                   let $storeID :=$record/STORE_ID/text()
                   let $isMigroskop :=  $record/IS_MIGROSKOP/text()
-	          let $isMigroskop := if ($isMigroskop eq "1") then "true" else "false"
+                  let $isNew :=  $record/IS_NEW/text()
+                  let $isMigroskop := if ($isMigroskop eq "1") then "true" else "false"
+                  let $isNew := if ($isNew eq "1") then "true" else "false"
                   let $brandID :=  $record/BRAND_ID/text() 
                
                    
@@ -674,7 +822,7 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                        {$pDetail}
                        {$desc}
                        <field name="IsMigroskop">{$isMigroskop}</field>
-                     
+                       <field name="IsNew">{$isNew}</field>
                        {local:transTurkishChars("ProductMoreDetail",$pDetail/text())}  
                        {local:transTurkishChars("ProductModelName",$pmn/text())}
                        {local:transTurkishChars("Description",$desc/text())}
@@ -801,13 +949,18 @@ return
   :)
   
 return
-  if ($action eq "coresetup") then
+   if ($action eq "coresetup") then
     local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$mapMD ,$shortProdMap )
-  else if ($action eq "addcrm") then
-    local:addCRMDataIntoProducts ()
+  else if ($action eq "addcrm1") then
+        local:addCRMDataIntoProducts ()
+  else if ($action eq "addcrm2") then
+        local:addCRMCountsIntoProducts()
+  else if ($action eq "addcrm3") then
+        local:addOnlineCustomersIntoProducts()
   else if ($action eq "addpsi") then
-    local:addPriceDataIntoAccumulatedFile ()
+    local:addPriceDataIntoAccumulatedFile()
   else ()
+
 
 
 

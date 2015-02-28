@@ -149,10 +149,11 @@
    <field name="BrandName" type="notoktext_tr" indexed="true" stored="true"/>
    <field name="BrandName_TR" type="textExact" indexed="true" stored="false"/>  
    <field name="IsMigroskop" type="boolean" indexed="true" stored="true"/>
+   <field name="IsNew" type="boolean" indexed="true" stored="true"/>
    <field name="IsInCampaign" type="boolean" indexed="true" stored="true"/>
    <field name="IsInCampaignBrand" type="boolean" indexed="true" stored="true"/> 
    <field name="IsInCampaignCategory" type="boolean" indexed="true" stored="true"/>
-
+ 
 
    <!-- sortable field -->	
    <field name="ProductModelName_Sort" type="alphaOnlySort" indexed="true" stored="false"/>

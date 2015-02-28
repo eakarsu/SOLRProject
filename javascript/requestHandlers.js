@@ -723,6 +723,10 @@ function parseDebugExplain (solrdata)
                 if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelNameExact:/)){
                     selectedRanFuncName = "InPromotionExact";
                 }
+                //IsNEw
+                if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*IsNew.*query.*ProductModelNameExact:/)){
+                    selectedRanFuncName = "IsNewExact";
+                }
                 //Kampanya
                 else if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*IsInCampaignCategory.*query.*ProductModelNameExact:/)){
                     selectedRanFuncName = "IsInCampaignCategoryExact";
@@ -781,6 +785,10 @@ function parseDebugExplain (solrdata)
                 //InPromotion
                 if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*InPromotion.*query.*ProductModelName:/)){
                     selectedRanFuncName = "InPromotion";
+                }
+                //IsNew
+                if (funcDesc.match(/FunctionQuery.*product.*map.*termfreq.*IsNew.*query.*ProductModelName:/)){
+                    selectedRanFuncName = "IsNew";
                 }
                 //Kampanya
                 else if (funcDesc.match(/FunctionQuery.*map.*query.*ProductID.*IsInCampaignCategory:T/)){

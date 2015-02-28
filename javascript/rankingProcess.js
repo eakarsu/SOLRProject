@@ -19,7 +19,7 @@ var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 var nodeApp = require("./app.js");
 
-var host = '192.168.191.150';
+var host = '195.87.93.139';
 //var host = 'localhost';
 var port = '8080';
 var basepath = "/arabul?";
@@ -41,20 +41,21 @@ var rankOrder = {
     CustomersPurchased: 4,
     SegAmountGrade_SEGMENTID: 5,
     SegOrderCountGrade_SEGMENTID: 6,
-    NumberOfClicksGrade: 7,
+    IsNew: 7,
     AmountGrade: 8,
     OrderCountGrade: 9,
-    IsInCampaign:10,
-    IsInCampaignCategory:10,
-    IsInCampaignBrand:10,
-    BrandName: 11,
-    BrandName_TR: 11,
-    ProductFeatures: 11,
-    ProductFeatures_TR: 11,
-    Description: 11,
-    Description_TR: 11,
-    ProductProperty: 11,
-    ProductProperty_TR: 11};
+    NumberOfClicksGrade: 10,
+    IsInCampaign:11,
+    IsInCampaignCategory:11,
+    IsInCampaignBrand:11,
+    BrandName: 12,
+    BrandName_TR: 12,
+    ProductFeatures: 12,
+    ProductFeatures_TR: 12,
+    Description: 12,
+    Description_TR: 12,
+    ProductProperty: 12,
+    ProductProperty_TR: 12};
 
 var flList = [
     'ProductID',
@@ -74,6 +75,7 @@ var flList = [
     'InStock_STOREID',
     'PSIID_STOREID',
     'InPromotion_STOREID',
+    'IsNew',
     'score',
     'NumberOfAddCarts',
     'UnitVal_ADET',   
@@ -460,7 +462,7 @@ function prepareExceptionRankingForBF(allSortExprs, sortedRankOrder, sortExpr, s
             var sortExprTemp = sortExpr.replace("FIELDNAME", newFieldName);
             sortExprTemp = sortExprTemp + rankVal;
             allSortExprs.push(sortExprTemp);
-        } else if (field.match(/InPromotion|IsInCampaignCategory|IsInCampaignBrand|IsInCampaign/)) {
+        } else if (field.match(/InPromotion|IsInCampaignCategory|IsInCampaignBrand|IsInCampaign|IsNew/)) {
             var constVal = getConstVal(index, sortedRankOrder, highestRank,multiplier);
             promConstVal = Math.max(constVal,promConstVal);
             
@@ -1004,8 +1006,10 @@ function addFacetingFields (storeid,customerid,custsegmentid,otherFacets)
 function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword, start,facetList)
 {
     
-    var coreSearchPhrase = "ProductModelName:KEYWORD OR SearchKeywordValue:KEYWORD OR PathLevel2:KEYWORD OR ProductFeatures:KEYWORD OR ProductProperty:KEYWORD OR BrandName:KEYWORD";
+    var coreSearchPhrase ='q={!type=dismax qf="ProductModelName SearchKeywordValue PathLevel2 ProductFeatures ProductProperty BrandName text ProductModelNameExact" q.op=AND}KEYWORD';
     
+   //var coreSearchPhrase = "ProductModelName:KEYWORD OR SearchKeywordValue:KEYWORD OR PathLevel2:KEYWORD OR ProductFeatures:KEYWORD OR ProductProperty:KEYWORD OR BrandName:KEYWORD OR text:KEYWORD OR ProductModelNameExact:KEYWORD";
+   //var coreSearchPhrase = "turkishtext:KEYWORD OR text:KEYWORD  OR ProductModelNameExact:KEYWORD";
    //calculate facet boolean expression
     //var fPair = makeFilterBooleanExpr() (facetList,customerid);
     var fPair = makeFilterBooleanExprTagExclude(facetList,customerid,storeid);
@@ -1042,9 +1046,7 @@ function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custse
     coreSearchPhrase = coreSearchPhrase.replace (/KEYWORD/g,queryKeyword);
     var fl = "fl=" + localFlList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid).replace(/CUSTOMERID/g,customerid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
-    var solrURL = "q=StoreID:" + storeid + " AND (" + coreSearchPhrase +
-            " OR text:" + queryKeyword +" OR ProductModelNameExact:"+queryKeyword+
-            ")&" + fl + "&" + sortQuery + "&" + pfqfOnlyQuery + "&" + extraOpts;
+    var solrURL = "fq=StoreID:" + storeid + "&" + coreSearchPhrase +"&" + fl + "&" + sortQuery +  "&" + extraOpts;
     solrURL = solrURL + "&" + faceFields + "&" + hlPars;
     if (fPair.length > 0){
         solrURL = solrURL + "&"+fPair.join("&");
