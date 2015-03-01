@@ -178,7 +178,7 @@ function setupResults(body,storeid,custsegmentid,query) {
     var facets = findFacetingValues(solrdata,customerid,storeid,query);
     
     //swap first and third value if keyword macthes to a campaign
-    if ((docs[0]['IsInCampaign'] || docs[0]['IsInCampaignBrand']||docs[0]['IsInCampaignCategory']) && docs.length >= 3 ){
+    if ((docs.length >0 )&& (docs[0]['IsInCampaign'] || docs[0]['IsInCampaignBrand']||docs[0]['IsInCampaignCategory']) && docs.length >= 3 ){
         console.log ("Swapping 1. and 3. document");
         var temp = docs[2];
         docs[2] = docs[0];
@@ -584,7 +584,7 @@ function reformatSolrResult (solrBody,postBody)
         } ;
         
         //swap first and third value if keyword macthes to a campaign
-        if ((docs[0]['IsInCampaign'] || docs[0]['IsInCampaignBrand']||docs[0]['IsInCampaignCategory']) && docs.length >= 3 ){
+        if ((docs.length >0 )&&(docs[0]['IsInCampaign'] || docs[0]['IsInCampaignBrand']||docs[0]['IsInCampaignCategory']) && docs.length >= 3 ){
             console.log ("Swapping 1. and 3. document ");
             var temp = docs[2];
             docs[2] = docs[0];
