@@ -9,6 +9,7 @@ echo "indexing all tables in SOLR"
 $BASEX_HOME/bin/basexclient -p1984 -Padmin -Uadmin << EOF
     SET INTPARSE true;
     CREATE DB Brands $ROOT/SQLExtracts/Brands0.sql.xml
+    CREATE DB Customers $ROOT/SQLExtracts/Customers0.sql.xml
     CREATE DB Favorites $ROOT/SQLExtracts/Favorites0.sql.xml
     CREATE DB Features $ROOT/SQLExtracts/Features0.sql.xml
     CREATE DB Paths $ROOT/SQLExtracts/Path0.sql.xml

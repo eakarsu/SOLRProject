@@ -21,7 +21,7 @@ echo "Now index All Migros data in SOLR"
 
 $ROOT/performSolrIndexing.sh localhost 8080 migrossolr
 
-./populateCampaigns.sh localhost 8080 migrossolr
+$ROOT/populateCampaigns.sh localhost 8080 migrossolr
 
 echo "$(date):SOLR indexing done"
 

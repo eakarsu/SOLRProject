@@ -1,3 +1,5 @@
+(: This script products data to load into SOLR. The result file will be imported into XML DB called "CSstreamCartInfoMap" :)
+
 let $outfile := "/tmp/addcart.xml"
 let $res := file:write-text($outfile,"<add>")
 

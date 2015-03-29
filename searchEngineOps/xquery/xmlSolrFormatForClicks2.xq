@@ -1,3 +1,4 @@
+(: This script products data to load into SOLR. The result file will be imported into XML DB called "CSstreamClickInfoMap" :)
 let $priceMap :=
           map:new(
           for $psiRecord in fn:doc("PSI_All")//record

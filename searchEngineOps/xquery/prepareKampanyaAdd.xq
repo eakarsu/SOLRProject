@@ -2,12 +2,14 @@ declare variable $host as xs:string external;
 declare variable $port as xs:string external;
 declare variable $webpath as xs:string external;
 declare variable $outFileName as xs:string external;
+declare variable $process as xs:string external;
 
 (:
 let $host := "192.168.191.150"
 let $port := "8080"
 let $webpath := "migrossolr"
 let $outFileName := "c:/tmp/populateKamp.xml"
+let $process := "unset"
 :)
 
 let $curTime := fn:current-dateTime() 
@@ -28,11 +30,14 @@ let $addedDocs :=
            return
               <doc>
                 <field name="ProductID">{$pid}</field>
-                <field name="{$fieldName}" update="set">true</field>                
+                { if ($process eq "set") then
+                      <field name="{$fieldName}" update="set">true</field>  
+                  else
+                    <field name="IsInCampaign" update="set" null="true" />
+              }              
               </doc>
     where $curTime ge $startTime and $curTime le $endTime 
     return ($list)
- (:   <field name="IsInCampaign" update="set" null="true" /> :)  
   
 return 
   (file:write($outFileName, <add>{$addedDocs}</add>))

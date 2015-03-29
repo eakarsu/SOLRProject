@@ -6,7 +6,7 @@ ROOT=$(cd $(dirname "$0"); pwd)
 echo "$(date): Starting Pull Core Tables"
 
 ## declare an array variable
-declare -a array=("Brands" "Favorites" "Features" "Path" "Products" "Properties" "PSI_stock_info")
+declare -a array=("Brands" "Customers" "Favorites" "Features" "Path" "Products" "Properties" "PSI_stock_info")
 
 # get length of an array
 arraylength=${#array[@]}

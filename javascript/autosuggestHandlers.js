@@ -11,7 +11,7 @@ var qs = require('querystring');
 var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 
-var host = '192.168.191.143';
+var host = '192.168.191.141';
 var port = '8080';
 
 var basepath = "/arabul?";
@@ -100,10 +100,9 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     patternArray = [];
     var tries = 0;
     var j = -1;
-     
-    for (var j in docs) {
+    for (var id in highlighting) {
         tries++;
-        var id = docs[j]['ProductID'];
+        j++;
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
             var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
@@ -134,9 +133,8 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     
     counter = 0;
     j = 0;
-     for (var j in docs) {
-        tries++;
-        var id = docs[j]['ProductID'];
+     for (var id in highlighting) {
+        j++;
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
             var value = origvalue.replace(/<em>|<\/em>/g,"");

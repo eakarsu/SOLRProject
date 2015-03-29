@@ -469,15 +469,17 @@
                                 <label class="control-label col-md-3">Müşteri Grubu : </label>
                                 <div class="col-md-3">
                                     <select class="form-control input-small select2me" data-placeholder="Select Store ID" name="custsegmentid" id="custsegmentid">
-                                        <option value="101">Ebeveyn-Cocuklu</option>
-                                        <option value="102">PLciler</option>
-                                        <option value="103">Ehl-i keyfler</option>
-                                        <option value="104">Promosyoncular</option>
-                                        <option value="105">Bakımlılar</option>
-                                        <option value="106">Tazeciler</option>
-                                        <option value="107">Ev kuşları</option>
-                                        <option value="108">Ebeveyn-Pet</option>
-                                        <option value="109">Ebeveyn-Bebekli</option>
+
+					<option value="101">Aburcubur</option>
+                                        <option value="102">Çay_Kahve</option>
+                                        <option value="103">İçecek</option>
+                                        <option value="104">Karma_Az</option>
+                                        <option value="105">Meyve_Sebze</option>
+                                        <option value="106">Saç_Bakım</option>
+                                        <option value="107">Süt_Su-Maden</option>
+                                        <option value="108">Taze_Tüketim</option>
+                                        <option value="109">Temizlik</option>
+
                                     </select>
                                 </div>
 
@@ -549,7 +551,25 @@
 
                             {% for record in records %}
                             <tr height="1em">
-                                <td>{{ record['score']|safe }}</td>
+                                <td>
+                                    <div class="input-group-btn">
+					<button type="button" class="btn  dropdown-toggle" data-toggle="dropdown">
+                                            {{ record['score']|safe }} <i class="fa fa-angle-down"></i>
+                                        </button>
+					<ul class="dropdown-menu">
+                                            {% if record['debugData'] %}
+                                                {% for sdetail in record['debugData']['details'] %}
+                                                    <li>
+                                                        {{sdetail['score']}} : {{sdetail['rankFunc']}}
+                                                    </li>
+                                                {% endfor %}
+                                            {% endif %}
+					</ul>
+				    </div>
+                                </td>
+                                
+                                
+                                
                                 <td>{{ record['ProductID']|safe }}</td>
                                 <td>{{ record['ProductModelName']|safe }}</td>
                                 <td>{{ record['SegAmount']|safe }}</td>

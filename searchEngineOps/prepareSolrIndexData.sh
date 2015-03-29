@@ -13,7 +13,10 @@ echo "$(date): Adding Core Product data into solr input files .."
 $BASEX_HOME/bin/basex -baction=coresetup  $ROOT/xquery/PrepareMigrosData.xq
 
 echo "$(date): Adding CRM data into solr input files .." 
-$BASEX_HOME/bin/basex -baction=addcrm  $ROOT/xquery/PrepareMigrosData.xq
+$BASEX_HOME/bin/basex -baction=addcrm1  $ROOT/xquery/PrepareMigrosData.xq
+$BASEX_HOME/bin/basex -baction=addcrm2  $ROOT/xquery/PrepareMigrosData.xq
+$BASEX_HOME/bin/basex -baction=addcrm3  $ROOT/xquery/PrepareMigrosData.xq
+$BASEX_HOME/bin/basex -baction=addcrm4  $ROOT/xquery/PrepareMigrosData.xq
 
 echo "$(date): Adding Product Sales Infos data into solr input files .."
 $BASEX_HOME/bin/basex -baction=addpsi  $ROOT/xquery/PrepareMigrosData.xq

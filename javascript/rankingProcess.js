@@ -29,6 +29,7 @@ var reRankWeight = 1000;
 var campaignInfo = require("./campaignInfo");
 var days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
+
 //InPromotion_STOREID with rankling  4,7 or 9 will be inserted based on the discountPrefLev - discount prefrence level-kampanya duyarliligi 
 //and all other adjusted
 
@@ -76,6 +77,7 @@ var flList = [
     'PSIID_STOREID',
     'InPromotion_STOREID',
     'IsNew',
+    'SearchKeyword',
     'score',
     'NumberOfAddCarts',
     'UnitVal_ADET',   
@@ -493,8 +495,8 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
      * @type type
      */
 
-    var qq = "{!edismax bf=''}ProductModelName:KEYWORD OR ProductModelName_TR:KEYWORD";
-    var exactqq = "{!edismax bf=''}ProductModelNameExact:\"KEYWORD\" OR ProductModelName_TR:\"KEYWORD\"";
+    var qq = "{!edismax bf=''}ProductModelName:KEYWORD OR ProductModelName_TR:KEYWORD OR SearchKeyword:KEYWORD";
+    var exactqq = "{!edismax bf=''}ProductModelNameExact:\"KEYWORD\" OR ProductModelName_TR:\"KEYWORD\" OR SearchKeywordExact:\"KEYWORD\"";
     var sortExpr = "map(exists($qq),1,1,FIELDNAME,0)^";
     var sortExpr2 = "product(map(and(termfreq(FIELDNAME,FIELDVALUE),exists($qq)),1,1,1,0),CONST)^";
     var exactSortExpr = "map(exists($exactqq),1,1,FIELDNAME,0)^";
@@ -534,6 +536,7 @@ function prepareBFExpression2(localRankOrder, customerid, searchKeyword)
     
     qq = "qq=" + qq;
     exactqq = "exactqq=" + exactqq;
+    //var result = "bf=" + campExpr+ allSortExprs.join(" ") + "&" + qq + "&" + exactqq;//+campQuery;
     var result = "bf=" + campExpr+ allSortExprs.join(" ") + "&" + qq + "&" + exactqq+campQuery;
 
     return result;
@@ -1006,7 +1009,7 @@ function addFacetingFields (storeid,customerid,custsegmentid,otherFacets)
 function prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountPrefLev, custsegmentid, queryKeyword, start,facetList)
 {
     
-    var coreSearchPhrase ='q={!type=dismax qf="ProductModelName SearchKeywordValue PathLevel2 ProductFeatures ProductProperty BrandName text ProductModelNameExact" q.op=AND}KEYWORD';
+    var coreSearchPhrase ='q={!type=dismax qf="ProductModelName SearchKeywordValue PathLevel2 ProductFeatures ProductProperty BrandName SearchKeyword text ProductModelNameExact" q.op=AND}KEYWORD';
     
    //var coreSearchPhrase = "ProductModelName:KEYWORD OR SearchKeywordValue:KEYWORD OR PathLevel2:KEYWORD OR ProductFeatures:KEYWORD OR ProductProperty:KEYWORD OR BrandName:KEYWORD OR text:KEYWORD OR ProductModelNameExact:KEYWORD";
    //var coreSearchPhrase = "turkishtext:KEYWORD OR text:KEYWORD  OR ProductModelNameExact:KEYWORD";
@@ -1498,9 +1501,43 @@ function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, 
 
     return solrURL;
 
-}
-;
+};
 
+/**
+    * 
+    * @returns {undefined}
+    */
+   function reloadRankingProcessRequest(response,req){
+        reloadRankingProcess ();
+        
+        response.writeHead(200, {"Content-Type": "text/html;charset=UTF-8"});
+        response.write(html);
+        response.end();
+   };
+    
+   function reloadRankingProcess(){
+        var solrBody;
+        var campaignUrl = "http://"+host+":"+port+"/migrossolr/Config/select?q=section:ranking&wt=json&indent=true&rows=80" ;
+        console.log ("Using "+campaignUrl);
+        requestmod({ uri:campaignUrl}, function (error, response, body) {
+            solrBody = body;
+            console.log(body);
+        });
+        while(solrBody === undefined) {
+          require('deasync').runLoopOnce();
+        }
+        var solrdata = JSON.parse(solrBody);
+        //modify ranking values
+        var docs = solrdata.response.docs;
+        for (var docIndex in docs ){
+            var rankName = docs[docIndex].property;
+            var rankVal =  docs[docIndex].value_i;
+            console.log(rankName +" set to "+rankVal);
+            rankOrder [rankName] = rankVal;
+        }
+         
+   };
+   
 exports.prepareSOLRQuery = prepareSOLRQuery;
 exports.getFL = getFL;
 exports.prepareBrowseQuery = prepareBrowseQuery;
@@ -1511,3 +1548,5 @@ exports.handlePostSolrRequest = handlePostSolrRequest;
 exports.handleSortSolrRequest = handleSortSolrRequest;
 exports.getFacetQueryParam = getFacetQueryParam;
 exports.prepareSuggestQuery = prepareSuggestQuery;
+exports.reloadRankingProcessRequest=reloadRankingProcessRequest;
+exports.reloadRankingProcess=reloadRankingProcess;

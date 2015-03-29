@@ -4,8 +4,8 @@ declare variable $webpath as xs:string external;
 declare variable $coreName as xs:string external;
 declare variable $outFileName as xs:string external;
 
-
-(:let $host := "192.168.191.150"
+(:
+let $host := "192.168.191.150"
 let $port := "8080"
 let $webpath := "migrossolr"
 let $coreName := "ProductsCoreFirst"
@@ -25,14 +25,16 @@ let $addedDocs :=
     let $filter := '"'||encode-for-uri($rawFilter)||'"'
     let $docs :=
       if ($searchField ne "") then 
-          let $solrURLForField := "http://"||$host||":"||$port||"/"||$webpath||"/"||$coreName||"/select?q="||$searchField||":"||$filter||"&amp;fl=ProductID&amp;wt=xml&amp;indent=true&amp;rows=300"
+          let $solrURLForField := "http://"||$host||":"||$port||"/"||$webpath||"/"||$coreName||"/select?q="||$searchField||":"||$filter||"&amp;fl=ProductID,ProductModelName&amp;wt=xml&amp;indent=true&amp;rows=300"
           let $brandRes := http:send-request(<http:request method='get' status-only='false'/>, $solrURLForField)
           let $pids :=
-            for $pid in $brandRes[2]//result//str/text()
+            for $rec  in $brandRes[2]//result//doc
               return
-                <field name="ProductID" update="set">{$pid}</field>
+                (<field name="ProductID" update="set">{$rec/str[@name eq "ProductID"]/text()}</field>,
+                <field name="ProductModelName" update="set">{$rec/str[@name eq "ProductModelName"]/text()}</field>)
           return
             <doc>
+            {$solrURLForField}
               <field name="CampaignFilter" >{$rawFilter}</field>
               {$pids}
             </doc>
@@ -40,5 +42,5 @@ let $addedDocs :=
     return $docs
 
 return 
-  file:write($outFileName, <add>{$addedDocs}</add>)  
+  (file:write($outFileName, <add>{$addedDocs}</add>))  
 

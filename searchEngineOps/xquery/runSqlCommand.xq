@@ -23,15 +23,15 @@
 
        let $outputfile := fn:replace($outputfile,".sql",fn:concat($month,".sql"))
        let $addBegin := file:write-text($outputfile,"<RECORDS>","UTF-8")
-       let $url := "jdbc:oracle:thin:kangurum/planetuc9@212.12.132.196:1521/kngdb"
-(:
-       let $url := "jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST"
-:)
+       let $url := "jdbc:oracle:thin:kangurum/planetuc9@212.12.132.196:1521/kngdb"   
+
+       (: let $url := "jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST"   :)
+
        let $conn  := sql:connect($url)
        let $list :=
          for tumbling window $w in sql:execute ($conn,$sqlStmt)
             start at $x when fn:true()
-            end at $y when $y - $x = 3000
+            end at $y when $y - $x = 10000
               let $windowData :=
                 for $rec in $w
                    let $rowData :=

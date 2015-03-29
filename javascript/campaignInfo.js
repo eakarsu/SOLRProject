@@ -64,7 +64,7 @@ String.prototype.turkish = function () {
    }; 
    var request = require('request');  
    var exactMatchMultiplier = 2;
-   var campaignUrl = "http://192.168.191.150:8080/migrossolr/Campaigns/select?q=*:*&wt=json&indent=true" ;
+   var campaignUrl = "http://195.87.93.139:8080/migrossolr/Campaigns/select?q=*:*&wt=json&indent=true" ;
    var campaignData = [];
    
    /** 
@@ -93,7 +93,7 @@ String.prototype.turkish = function () {
     */
    function reloadCampaignDataRequest(response,req){
         reloadCampaignData ();
-        console.log(" Reloaded campaing data:"+campaignData+":"+campaignData.length);
+        //console.log(" Reloaded campaing data:"+campaignData+":"+campaignData.length);
         response.writeHead(200, {"Content-Type": "text/html;charset=UTF-8"});
         response.write(html);
         response.end();
@@ -103,7 +103,7 @@ String.prototype.turkish = function () {
         var solrBody;
         request({ uri:campaignUrl}, function (error, response, body) {
             solrBody = body;
-            console.log(body);
+            //console.log(body);
         });
         while(solrBody === undefined) {
           require('deasync').runLoopOnce();

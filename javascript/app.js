@@ -10,6 +10,7 @@ var autosuggestjson = require("./autosuggestHandlersJson");
 var express = require('express');
 var swig = require('swig');
 var campaignInfo = require("./campaignInfo");
+var rankingProcess = require("./rankingProcess");
 var app = express();
  
 app.use('/media', express.static(__dirname + '/media'));
@@ -40,6 +41,10 @@ app.get('/reloadcampaign', function(req,res) {
 	campaignInfo.reloadCampaignDataRequest(res,req);
 });
 
+app.get('/reloadrankingparams', function(req,res) {
+        console.log ('reloadcampaign called..')
+	rankingProcess.reloadRankingProcessRequest(res,req);
+});
 
 app.use(error);
 
@@ -72,11 +77,15 @@ handle["/css/"] = requestHandlers.css;
 server.start(router.route, handle);
 */
 
+//reload ranking data
+rankingProcess.reloadRankingProcess ();
 
 var activeCoreName = readConfigFile();
 //load kampanya data first
 campaignInfo.reloadCampaignData();
 
+
+      
 fs.watchFile('ACTIVE_CORE_NAME', function (){
     readConfigFile();
  });
