@@ -921,9 +921,9 @@ let $mapBrands :=
 
 let $mapFeatures :=
   map:new(for $record in fn:doc("Features")//record
-             let $pid := $record/PRODUCT_ID
-             group by $pid
-             return map:entry($pid,$record/FEATURE_VALUE/text()))
+             let $pmid := $record/PRODUCT_MODEL_ID
+             group by $pmid
+             return map:entry($pmid,$record/FEATURE_VALUE/text()))
 
 let $mapFavorites :=
   map:new(for $record in fn:doc("Favorites")//record

@@ -1492,11 +1492,12 @@ function prepareSolrSortQuery(customerid, storeid, custsegmentid, queryKeyword, 
    //facetVal.constructor === Array
    //Add facting fields
     var faceFields = addFacetingFields (storeid,customerid,custsegmentid,fPair);
-    
+  
+    fPair = fPair.join("&"); 
     queryKeyword = encodeURIComponent(queryKeyword);
     var fl = "fl=" + flList.join(",").replace(/SEGMENTID/g, custsegmentid).replace(/STOREID/g, storeid).replace(/CUSTOMERID/g,customerid) + ",score";
     var extraOpts = "wt=json&indent=true&stopwords=true&start=" + start;
-    var solrURL = "q=StoreID:" + storeid + fPair+" AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&" + extraOpts;
+    var solrURL = "q=StoreID:" + storeid + " AND (turkishtext:" + queryKeyword + " OR text:" + queryKeyword + ")&" + fl + "&"+fPair+"&" + extraOpts;
     solrURL = solrURL + "&" + faceFields+"&sort="+sortkeyword;
 
     return solrURL;
