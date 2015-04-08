@@ -183,6 +183,10 @@ function setupResults(body,storeid,custsegmentid,query) {
         var temp = docs[2];
         docs[2] = docs[0];
         docs[0] = temp;
+
+        temp = docs[1];
+        docs[1] = docs[0];
+        docs[0] = temp;
     }
     
     for (j = 0; j < docs.length; j++) {

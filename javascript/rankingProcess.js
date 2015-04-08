@@ -1070,7 +1070,8 @@ function prepareSuggestQueryExt(customerid, storeid, discountPrefLev, custsegmen
 
     //debuggin bf parameters for now with boosting instead of sorting */
     //var sortQuery = prepareSortExpression2(localRankOrder,customerid,queryKeyword);
-    var sortQuery = prepareBFExpression2Suggest(localRankOrder, customerid, queryKeyword);
+    //var sortQuery = prepareBFExpression2Suggest(localRankOrder, customerid, queryKeyword);
+    var sortQuery = prepareBFExpression2(localRankOrder, customerid, queryKeyword);
  
     queryKeyword = encodeURIComponent(queryKeyword);
     var solrURL = "q=" + queryKeyword+"&fq=StoreID:"+storeid+"&" + sortQuery+"&fl=PSIID_"+storeid+",ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";

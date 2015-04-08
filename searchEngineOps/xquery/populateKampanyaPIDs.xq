@@ -22,6 +22,7 @@ let $addedDocs :=
     let $type := $doc/str[@name eq "CampaignType"]
     let $searchField := if ($type eq "Brand") then "BrandName" else if ($type eq "Category") then "PathLevel2" else ""
     let $rawFilter := $doc/str[@name eq "CampaignFilter"]/text()
+    let $id := $doc/str[@name eq "id"]/text()
     let $filter := '"'||encode-for-uri($rawFilter)||'"'
     let $docs :=
       if ($searchField ne "") then 
@@ -35,7 +36,7 @@ let $addedDocs :=
           return
             <doc>
             {$solrURLForField}
-              <field name="CampaignFilter" >{$rawFilter}</field>
+              <field name="id" >{$id}</field>
               {$pids}
             </doc>
        else ()
