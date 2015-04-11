@@ -1,4 +1,4 @@
-var querystring = require("querystring"),
+﻿var querystring = require("querystring"),
         fs = require("fs"),
         formidable = require("formidable");
 var http = require('http');
@@ -21,53 +21,6 @@ var reRankWeight = 1000;
 var maxCount = 5;
 var rankingProcess = require("./rankingProcess");
 
-function getSuggestTopics2(response, body, query, requesturl,solrURL) {
-   
-            
-    var solrdata = JSON.parse(body);
-    var highlighting = solrdata.highlighting;
-       
-    var counter = 0;
-    var topics  = [];
-    var pmnames = [];
-    patternArray = [];
-    for (var id in highlighting) {
-        if (highlighting.hasOwnProperty(id)) {
-            var origvalue = highlighting[id].suggest_ngram[0];
-            var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
-            if (pattern !== null){
-                pattern = pattern.join(" ").replace(/<em>|<\/em>/g,"");
-            }else{
-                continue;
-            }
-            var value = origvalue.replace(/<em>|<\/em>/g,"");
-            var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
-            label = label.replace(/<\/em>/g,"</span>");
-            console.log(id+":"+origvalue+" value="+value+":"+label+": pattern="+pattern);
-            if (pattern !== null){
-                var index = patternArray.indexOf(pattern);
-                if (index < 0 && counter < maxCount){ 
-                    patternArray.push(pattern);
-                    var triple1 = {id:id,value:value,label:label}; 
-                    pmnames.push(triple1); 
-                    var triple2 = {id:id+1,value:pattern,label:pattern}; 
-                    topics.push(triple2);
-                    counter++;
-                }
-                if (counter === maxCount){
-                    break;
-                }
-            }
-        }
-    }
-    var triple = {id:id,value:value,label:"-------------------------------------"}; 
-    topics.push(triple); 
-    topics = topics.concat(pmnames);
-    
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.write(JSON.stringify(topics));
-    response.end();
-};
 
 function getSpellChecks (solrdata,topics)
 {
@@ -88,24 +41,34 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     var custsegmentid = query.custsegmentid;
     var discountlevel = query.discountlevel;
     var showsolrreq = query.showsolrreq;
-    
+    	
     var solrdata = JSON.parse(body);
     var highlighting = solrdata.highlighting;
     var docs = solrdata.response.docs;
     var psiIDProp = "PSIID_"+storeid;
-    
+    var numFound = solrdata.response.numFound;
+	
     var counter = 0;
     var topics  = [];
     var pmnames = [];
     patternArray = [];
     var tries = 0;
     var j = -1;
-    for (var id in highlighting) {
+	
+	var docsPids ={};
+    var nelems = Math.min(100,numFound);
+    for (var j=0;j<nelems;j++ ){
+        var pid = docs[j]['ProductID'];
+        docsPids[j]= pid;
+    };
+	
+    for (var docIndex in docsPids) {
         tries++;
         j++;
+		var id = docsPids[docIndex];
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
-            var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
+ 		    var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
             if (pattern !== null){
                 pattern = pattern.join(" ").replace(/<em>|<\/em>/g,"");
             }else{
@@ -114,14 +77,22 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
             if (pattern !== null){
                 var index = patternArray.indexOf(pattern);
                 if (index < 0 && counter < maxCount){ 
-                    if (typeof docs[j][psiIDProp] === 'undefined'){
+                    if (typeof docs[docIndex][psiIDProp] === 'undefined'){
                         continue;
                     }
-                    var psi = docs[j][psiIDProp]; 
+                    var psi = docs[docIndex][psiIDProp]; 
                     patternArray.push(pattern);
                     var triple2 = {id:psi,value:pattern,label:pattern}; 
                     topics.push(triple2);
                     counter++;
+					
+					//add pnames here
+					var value = origvalue.replace(/<em>|<\/em>/g,"");
+					var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
+					label = label.replace(/<\/em>/g,"</span>");
+					var triple1 = {id:psi,value:value,label:label}; 
+					pmnames.push(triple1); 
+				
                 }
                 if (counter === maxCount){
                     break;
@@ -131,26 +102,6 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     }
     console.log("Tried count="+tries);
     
-    counter = 0;
-    j = 0;
-     for (var id in highlighting) {
-        j++;
-        if (highlighting.hasOwnProperty(id)) {
-            var origvalue = highlighting[id].suggest_ngram[0];
-            var value = origvalue.replace(/<em>|<\/em>/g,"");
-            var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
-            label = label.replace(/<\/em>/g,"</span>");
-            if (counter < maxCount){ 
-                var psi = docs[j][psiIDProp]; 
-                var triple1 = {id:psi,value:value,label:label}; 
-                pmnames.push(triple1); 
-                counter++;
-            }
-            if (counter === maxCount){
-                break;
-            }
-        }
-    }
     
     if (counter === 0){
         getSpellChecks(solrdata,topics);
@@ -171,12 +122,14 @@ function autosuggest(presponse, request) {
     var term = encodeURIComponent(queryData.term);
      
     var solrURL = rankingProcess.prepareSuggestQuery(request);
+    solrURL = solrURL.replace(/autosuggest/,"autosuggestjson");
+    
     console.log("Autosuggest url ext:"+solrURL);
        
     requestmod(solrURL, function (error, response, body) {
         getSuggestTopics(presponse, body, queryData, request.url,solrURL);
 
     });
-}
+};
 
 exports.autosuggest = autosuggest;
