@@ -57,19 +57,21 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
     var tries = 0;
     var j = -1;
     
-    var docsMap ={};
+    
+	var docsPids ={};
     var nelems = Math.min(100,numFound);
     for (var j=0;j<nelems;j++ ){
         var pid = docs[j]['ProductID'];
-        docsMap[pid]= docs[j];
+        docsPids[j]= pid;
     };
-    
-    for (var id in highlighting) {
+	
+    for (var docIndex in docsPids) {
         tries++;
         j++;
+		var id = docsPids[docIndex];
         if (highlighting.hasOwnProperty(id)) {
             var origvalue = highlighting[id].suggest_ngram[0];
-            var pattern = origvalue.match(/<em>[A-Za-z0-9çÇğĞıİöÖşŞüÜ]*<\/em>/g);
+            var pattern = origvalue.match(/<em>[A-Za-z0-9��gGiI��sS��]*<\/em>/g);
             if (pattern !== null){
                 pattern = pattern.join(" ").replace(/<em>|<\/em>/g,"");
             }else{
@@ -78,16 +80,27 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
             if (pattern !== null){
                 var index = patternArray.indexOf(pattern);
                 if (index < 0 && counter < maxCount){ 
-                    if (typeof docsMap[id][psiIDProp] === 'undefined'){
+                    if (typeof docs[docIndex][psiIDProp] === 'undefined'){
                         continue;
                     }
-                     var pid = id;
-                    var psi = docsMap[pid][psiIDProp]; 
+                    var pid = id;
+                    var psi = docs[docIndex][psiIDProp]; 
                     
                     patternArray.push(pattern);
                     var triple2 = {psi:psi,value:pattern,pid:pid}; 
                     topics.push(triple2);
                     counter++;
+					
+					//add pmnames
+					var value = origvalue.replace(/<em>|<\/em>/g,"");
+					var shopCategoryId = docs[docIndex]['shopCategoryId']; 
+					var shopCategoryName = docs[docIndex]['shopCategoryName']; 
+					var shopCategoryNameEn = docs[docIndex]['shopCategoryNameEn']; 
+					 
+					var triple1 = {psi:psi,value:value,pid:pid,
+						shopCategoryId:shopCategoryId,shopCategoryName:shopCategoryName,shopCategoryNameEn:shopCategoryNameEn}; 
+					pmnames.push(triple1); 
+				
                 }
                 if (counter === maxCount){
                     break;
@@ -96,38 +109,7 @@ function getSuggestTopics(response, body, query, requesturl,solrURL) {
         }
     }
     console.log("Tried count="+tries);
-    
-   
-    counter = 0;
-    j = 0;
-     for (var id in highlighting) {
-        j++;
-        if (highlighting.hasOwnProperty(id)) {
-            var origvalue = highlighting[id].suggest_ngram[0];
-            var value = origvalue.replace(/<em>|<\/em>/g,"");
-            var label  = origvalue.replace(/<em>/g,"<span class=\"hl_results\">");
-            label = label.replace(/<\/em>/g,"</span>");
-            if (counter < maxCount){ 
-                var pid = id; 
-                var psi = docsMap[pid][psiIDProp]; 
-                if (typeof psi === 'undefined'){
-                        continue;
-                }
-                var shopCategoryId = docsMap[pid]['shopCategoryId']; 
-                var shopCategoryName = docsMap[pid]['shopCategoryName']; 
-                var shopCategoryNameEn = docsMap[pid]['shopCategoryNameEn']; 
-                 
-                var triple1 = {psi:psi,value:value,pid:pid,
-                    shopCategoryId:shopCategoryId,shopCategoryName:shopCategoryName,shopCategoryNameEn:shopCategoryNameEn}; 
-                pmnames.push(triple1); 
-                counter++;
-            }
-            if (counter === maxCount){
-                break;
-            }
-        }
-    }
-    
+     
     if (counter === 0){
         getSpellChecks(solrdata,topics);
     }
