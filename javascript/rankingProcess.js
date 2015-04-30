@@ -19,8 +19,8 @@ var mustache = require('mustache'); // bring in mustache template engine
 var swig = require('swig');
 var nodeApp = require("./app.js");
 
-var host = '195.87.93.139';
-//var host = 'localhost';
+//var host = '195.87.93.139';
+var host = 'localhost';
 var port = '8080';
 var basepath = "/arabul?";
 var gradeWindowLen = 5;
@@ -1074,7 +1074,9 @@ function prepareSuggestQueryExt(customerid, storeid, discountPrefLev, custsegmen
     var sortQuery = prepareBFExpression2(localRankOrder, customerid, queryKeyword);
  
     queryKeyword = encodeURIComponent(queryKeyword);
-    var solrURL = "q=" + queryKeyword+"&fq=StoreID:"+storeid+"&" + sortQuery+"&fl=PSIID_"+storeid+",ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";
+    var solrURL = "q=" + queryKeyword+"&fq=StoreID:"+storeid+"&" + sortQuery+"&fl=PSIID_"+storeid+",ProductModelName,ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";
+    //var solrURL = "q=" + queryKeyword+"&fq=StoreID:"+storeid+"&fl=PSIID_"+storeid+",ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";
+    //var solrURL = "q=" + queryKeyword+"&fq=StoreID:"+storeid+"&" + sortQuery+"&fl=PSIID_"+storeid+",ProductID,shopCategoryId,shopCategoryName,shopCategoryNameEn";
 
     return solrURL;
 
@@ -1377,6 +1379,8 @@ function prepareSuggestQuery(request)
     }
 
     var solrQuery = prepareSuggestQueryExt(customerid, storeid, discountlevel, custsegmentid, queryKeyword);
+    console.log ("solrQuery First="+solrQuery);
+    
     var solrURL = "http://" + host + ":" + port + getSolrPath("Auto") + solrQuery;
     console.log("Sending solrURL=" + solrURL);
     return solrURL;
