@@ -864,6 +864,11 @@ function makeFilterBooleanExprTagExclude (facetList,customerid,storeid)
                 var lb = words [0];
                 var ub = words [3];
                 var unitSymbol = words[4];
+				if (typeof unitSymbol === 'undefined') {
+					unitSymbol = lb;
+					lb = "*";
+					ub = "*";
+				}    
                 var rangeQuery = "["+lb+ " TO "+ub+"]";
                 var localPropName = "UnitVal_"+unitSymbol;
                 var rangeExpr = localPropName+":"+rangeQuery;
