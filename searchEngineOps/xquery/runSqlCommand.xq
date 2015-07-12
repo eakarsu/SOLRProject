@@ -23,7 +23,7 @@
 
        let $outputfile := fn:replace($outputfile,".sql",fn:concat($month,".sql"))
        let $addBegin := file:write-text($outputfile,"<RECORDS>","UTF-8")
-       let $url := "jdbc:oracle:thin:kangurum/planetuc9@212.12.132.196:1521/kngdb"   
+       let $url := "jdbc:oracle:thin:kangurum/ferhatpasa1@212.12.132.196:1521/kngdb"   
 
        (: let $url := "jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST"   :)
 

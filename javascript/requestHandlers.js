@@ -346,7 +346,7 @@ function solrdata(presponse, request) {
     console.log("Request handler 'solrdata' was called for " + request.url);
     var queryData = url.parse(request.url, true).query;
     
-    var solrURL = rankingProcess.prepareBQOnlySOLRQuery2 (request);
+    var solrURL = rankingProcess.prepareBQOnlySOLRQuery2 (queryData);
     requestmod(solrURL, function (error, response, body) {
         buildPage(presponse, body, queryData, request.url,solrURL);
 

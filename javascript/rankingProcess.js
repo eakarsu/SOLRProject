@@ -1323,10 +1323,35 @@ function getPostedFacetQueryParam(postBody)
     return facetList;
 };
 
-function prepareBQOnlySOLRQuery2(request)
+function getCustomerSegment(customerID){
+		var segments = ["Aburcubur","Çay_Kahve","İçecek","Karma_Az",
+		"Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik"];
+     
+        var solrBody;
+        var cstUrl = "http://"+host+":"+port+"/migrossolr/CustomerSegments/select?q=CustomerID:"+customerID+"&wt=json&indent=true&rows=80" ;
+        console.log ("Using to find customer segment"+cstUrl);
+        requestmod({ uri:cstUrl}, function (error, response, body) {
+            solrBody = body;
+            console.log(body);
+        });
+        while(solrBody === undefined) {
+          require('deasync').runLoopOnce();
+        }
+        var solrdata = JSON.parse(solrBody);
+		var docs = solrdata.response.docs;
+		var segment = ""; 
+		if (docs.length > 0){
+			segment = docs[0].CustomerSegment;
+			segment = "10"+(segments.indexOf(segment)+1);
+		}  
+        console.log ("Found Segment :"+segment+" for customerID:"+customerID);
+        return segment;
+   };  
+    
+function prepareBQOnlySOLRQuery2(query)
 {
-
-    var query = url.parse(request.url, true).query;
+   
+    //var query = url.parse(request.url, true).query;
     var start = query.start;
     var queryKeyword = query.q;
     var customerid = query.customerid;
@@ -1337,10 +1362,15 @@ function prepareBQOnlySOLRQuery2(request)
     
     var facetQueryPair = getFacetQueryParam(query);
     
-    console.log("Received URL parameters from url=" + request.url + " q=" + queryKeyword +
+    console.log("Received URL parameters from url= q=" + queryKeyword +
             " storeid=" + storeid + " customerid=" + customerid + " custsegmentid=" +
             custsegmentid + " discountlevel=" + discountlevel + " start=" + start + " showsolrreq=" + showsolrreq);
 
+	if (custsegmentid == "") {
+		custsegmentid = getCustomerSegment (customerid);
+		query.custsegmentid = custsegmentid;
+	} 
+	
     if (typeof start === 'undefined') {
         start = 0;
         console.log("setting start to 0");
@@ -1432,12 +1462,16 @@ function handlePostSolrRequest(postBody)
          
     console.log("Received URL parameters  q=" + queryKeyword +
             " storeid=" + storeid + " customerid=" + customerid + " custsegmentid=" +
-            custsegmentid + " discountlevel=" + discountlevel + " start=" + start + " showsolrreq=" + showsolrreq);
+            custsegmentid + " discountlevel=" + discountlevel + " start=|" + start + "|rows=|"+rows+"| showsolrreq=" + showsolrreq);
 
-    if (typeof start === 'undefined') {
+    if (typeof start === 'undefined' || start == null) {
         start = 0;
         console.log("setting start to 0");
-    }
+    };
+    if (typeof rows === 'undefined' || rows == null) {
+        rows = 0;
+        console.log("setting rows to 0");
+    };
     console.log ("rows:"+rows);
     
     var solrQuery = prepareOnlyBQOnlyQueryExt2(customerid, storeid, discountlevel, custsegmentid, queryKeyword, start,facetQueryPair);

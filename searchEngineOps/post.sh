@@ -17,11 +17,12 @@ set -x #echo on
 
 FILES=$*
 host=$1
-webpath=$2
-corename=$3
-URL=http://${host}:8080/${webpath}/${corename}/update
+port=$2
+webpath=$3
+corename=$4
+URL=http://${host}:${port}/${webpath}/${corename}/update
 
-for f in "${@:4}"; do
+for f in "${@:5}"; do
   echo "$(date):" Posting file $f to $URL
   curl $URL --data-binary @$f -H 'Content-type:application/xml' 
   echo "$(date):" Done with Posting file $f to $URL

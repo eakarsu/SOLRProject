@@ -81,6 +81,7 @@ server.start(router.route, handle);
 rankingProcess.reloadRankingProcess ();
 
 var activeCoreName = readConfigFile();
+var nodejsPortNumber = readPortNum();
 //load kampanya data first
 campaignInfo.reloadCampaignData();
 
@@ -92,12 +93,20 @@ fs.watchFile('ACTIVE_CORE_NAME', function (){
  
  function readConfigFile ()
  {
-    var fileContent = fs.readFileSync("ACTIVE_CORE_NAME", "utf8");
+    var fileContent = fs.readFileSync('ACTIVE_CORE_NAME', "utf8");
     activeCoreName = fileContent.trim();
     console.log("Read new core name:"+activeCoreName);
     return activeCoreName;
  };
  
+ function readPortNum ()
+ {
+    var fileContent = fs.readFileSync('NODEJS_PORT_NUMBER', "utf8");
+    nodejsPortNumber = fileContent.trim();
+    console.log("Read portnum:"+nodejsPortNumber);
+    return nodejsPortNumber;
+ };
+
  function getActiveCoreName ()
  {
      return activeCoreName;
@@ -105,4 +114,6 @@ fs.watchFile('ACTIVE_CORE_NAME', function (){
  
 exports.getActiveCoreName = getActiveCoreName;
 
-app.listen(8888);
+console.log("Listening Search on port " + nodejsPortNumber);
+
+app.listen(nodejsPortNumber);

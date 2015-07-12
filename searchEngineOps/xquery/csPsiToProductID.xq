@@ -1,5 +1,5 @@
 let $priceMap :=
-          map:new(
+          map:merge(
           for $psiRecord in fn:doc("PSI_All")//record
                     let $pid := $psiRecord/PRODUCT_ID/text()
                     let $psi := $psiRecord/PRODUCT_SALES_INFO_ID/text()

@@ -1,7 +1,7 @@
 let $outfile := "/tmp/clicks.xml"
 let $res := file:write-text($outfile,"<add>")
 let $priceMap :=
-          map:new(
+          map:merge(
           for $psiRecord in fn:doc("PSI_All")//record
                     let $pid := $psiRecord/PRODUCT_ID/text()
                     let $psi := $psiRecord/PRODUCT_SALES_INFO_ID/text()

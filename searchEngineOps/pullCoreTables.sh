@@ -14,8 +14,8 @@ arraylength=${#array[@]}
 # use for loop read all values and indexes
 for (( i=1; i<${arraylength}+1; i++ ));
 do
-  echo "$(date):Executing " $BASEX_HOME80/bin/basex -bsqlfile=$ROOT/sqlStmts/${array[$i-1]}.sql -boutputfile=$ROOT/SQLExtracts/${array[$i-1]}.sql.xml -bmonth=0 $ROOT/xquery/runSqlCommand.xq
-  $BASEX_HOME80/bin/basex -bsqlfile=$ROOT/sqlStmts/${array[$i-1]}.sql -boutputfile=$ROOT/SQLExtracts/${array[$i-1]}.sql.xml -bmonth=0 $ROOT/xquery/runSqlCommand.xq
+  echo "$(date):Executing " $BASEX_HOME/bin/basex -bsqlfile=$ROOT/sqlStmts/${array[$i-1]}.sql -boutputfile=$ROOT/SQLExtracts/${array[$i-1]}.sql.xml -bmonth=0 $ROOT/xquery/runSqlCommand.xq
+  $BASEX_HOME/bin/basex -bsqlfile=$ROOT/sqlStmts/${array[$i-1]}.sql -boutputfile=$ROOT/SQLExtracts/${array[$i-1]}.sql.xml -bmonth=0 $ROOT/xquery/runSqlCommand.xq
 done
 
 echo "pull Product model details"

@@ -7,7 +7,7 @@ port=$2
 webpath=$3
 ROOT=$(cd $(dirname "$0"); pwd)
 
-read activeCoreName < /opt/migros/webuiprod/src/ACTIVE_CORE_NAME
+read activeCoreName < $ROOT/../webuiprod/src/ACTIVE_CORE_NAME
 
 echo "activeCoreName = ${activeCoreName}"
 
@@ -30,7 +30,7 @@ echo "We are indexing into this core ${corename}"
 
 for i in {0..23}
 do
-   $ROOT/post.sh $host $webpath $corename $ROOT/solrinputfiles/batches/solrinput${i}.xml &
+   $ROOT/post.sh $host $port $webpath $corename $ROOT/solrinputfiles/batches/solrinput${i}.xml &
 done
 
 wait
@@ -42,8 +42,8 @@ result=$($BASEX_HOME/bin/basex -bhost=$host -bport=$port -bwebpath=$webpath -bco
 if [ $result -eq "0" ]
 then
   echo "RELOADed core=${corename} executed successfully"
-  echo "writing new core name into /opt/migros/webuiprod/src/ACTIVE_CORE_NAME "
-  echo ${corename} > /opt/migros/webuiprod/src/ACTIVE_CORE_NAME
+  echo "writing new core name into $ROOT/../webuiprod/src/ACTIVE_CORE_NAME "
+  echo ${corename} > $ROOT/../webuiprod/src/ACTIVE_CORE_NAME
 else
   echo "Faced problem in RELOADING core = ${corename}"
 fi

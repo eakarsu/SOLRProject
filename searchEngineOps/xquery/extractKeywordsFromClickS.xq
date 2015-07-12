@@ -1,5 +1,5 @@
 let $prodMap :=
-map:new(
+map:merge(
   for $rec in fn:doc("CoreProductInfo")//record
       let $pid := $rec/PRODUCT_ID/text()
       let $pmn := $rec/PRODUCT_MODEL_NAME/text()

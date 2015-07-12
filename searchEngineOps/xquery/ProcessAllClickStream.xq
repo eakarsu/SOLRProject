@@ -137,8 +137,8 @@ let $cartDoc := fn:doc($addCartDoc)//RECORDS
 :)
 
 let $ignores :=
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?getFastPurchaseProductList.do/item=0$|"||
-(: "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?lastBoughtProducts.do|"|| :)
+"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?getFastPurchaseProductList.do|"||
+"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?lastBoughtProducts.do|"|| 
 "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?kangmessages.do|"||
 "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?addCustomerOpinion.do|"||
 "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?showStaticHelpPage.do|"||
