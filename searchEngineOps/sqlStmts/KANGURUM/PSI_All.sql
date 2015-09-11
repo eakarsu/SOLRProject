@@ -8,9 +8,8 @@ SELECT
   psi.stock_amount,
   st.store_id
 FROM 
-  PRODUCT_SALES_INFOS psi,
-  STORES st
+  KANGURUM.PRODUCT_SALES_INFOS psi,
+  KANGURUM.STORES st
 WHERE
  psi.store_id              = st.store_id
-AND st.is_active              = 1
 ORDER BY psi.product_id

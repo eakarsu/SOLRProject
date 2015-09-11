@@ -8,10 +8,10 @@ SELECT
   psi.stock_amount,
   st.store_id
 FROM 
-  PRODUCT_SALES_INFOS psi,
-  STORES st,
-  PRODUCT_MODELS pm,
-  PRODUCTS p
+  KANGURUM.PRODUCT_SALES_INFOS psi,
+  KANGURUM.STORES st,
+  KANGURUM.PRODUCT_MODELS pm,
+  KANGURUM.PRODUCTS p
 WHERE
   p.product_model_id        = pm.product_model_id
 AND p.product_id              =psi.product_id

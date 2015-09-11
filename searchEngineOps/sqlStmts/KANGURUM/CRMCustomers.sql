@@ -1,9 +1,9 @@
 SELECT p.product_id,
   cs.customer_id
 FROM CRM.SPSS_VM_KART_ITEM crm,
-  product_models pm,
-  products p,
-  customers cs
+  KANGURUM.product_models pm,
+  KANGURUM.products p,
+  KANGURUM.customers cs
 WHERE TO_CHAR(crm.item_number) = REGEXP_REPLACE(pm.shop_code,'^0+','')
 AND p.product_model_id         = pm.product_model_id
 AND cs.migros_card_no          = TO_CHAR(crm.MIGROSCARDNUMBER)

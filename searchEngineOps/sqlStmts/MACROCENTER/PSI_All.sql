@@ -8,8 +8,8 @@ SELECT
   psi.stock_amount,
   st.store_id
 FROM 
-  PRODUCT_SALES_INFOS psi,
-  STORES st
+  MACROCENTER.PRODUCT_SALES_INFOS psi,
+  MACROCENTER.STORES st
 WHERE
  psi.store_id              = st.store_id
 ORDER BY psi.product_id

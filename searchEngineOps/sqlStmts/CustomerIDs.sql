@@ -1,1 +1,0 @@
-select CUSTOMER_ID,MIGROS_CARD_NO from customers

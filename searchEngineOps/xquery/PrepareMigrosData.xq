@@ -4,6 +4,7 @@ declare namespace pattern = "java.util.regex.Pattern";
 declare namespace string = "java.lang.String";
 declare namespace random = "java.util.Random";
 declare variable $action as xs:string external;
+declare variable $context as xs:string external;
 
 declare function local:convertUnit ($uval as xs:string, $usymbol as xs:string) as xs:string*
 {
@@ -157,7 +158,7 @@ declare function local:transTurkishChars ($fieldName,$sentence as xs:string*) as
 declare function local:getSegmentInfo () as map(*)
 {
     let $stats := map:merge(
-    for $record in fn:doc("Customers")//record
+    for $record in fn:doc($context||"Customers")//record
                   let $amounts := $record/AMOUNT/text()
                   let $orderCounts := $record/ORDER_COUNT/text()
                   let $seg := $record/SEGMENT_ID/text()
@@ -192,7 +193,7 @@ declare function local:getSegmentInfo () as map(*)
 
   let $segMap :=
    map:merge(
-    for $record in fn:doc("Customers")//record
+    for $record in fn:doc($context||"Customers")//record
                   let $pid := $record/PRODUCT_ID/text()
                   group by $pid
                     return
@@ -224,7 +225,7 @@ declare function local:getSegmentInfo () as map(*)
 declare function local:getAddCartMap () as map(*)
 {
                 let $mapAddCarts :=
-           map:merge(for $record in fn:doc("CSstreamCartInfoMap")//doc
+           map:merge(for $record in fn:doc($context||"CSstreamCartInfoMap")//doc
                      let $pid := $record/ProductID/text()
                      where $pid ne "" and fn:not(fn:empty($pid))
                      group by $pid
@@ -236,14 +237,14 @@ declare function local:getAddCartMap () as map(*)
 declare function local:getClicksMap () as map(*)
 {
    let $mapClicks :=
-           map:merge(for $psi in fn:doc("CSstreamClickInfoMap")//PSIID
+           map:merge(for $psi in fn:doc($context||"CSstreamClickInfoMap")//PSIID
                  let $holder := $psi
                  where $psi/../IsClicked eq "true"
                  group by $psi
                  return map:entry($psi,fn:count($holder)))
 (:
                 let $mapClicks :=
-           map:merge(for $record in fn:doc("CSstreamClickInfo")//Clicked
+           map:merge(for $record in fn:doc($context||"CSstreamClickInfo")//Clicked
                  let $psi := $record/clickedPsi/text()
                  where $record/IsClicked eq "true"
                  group by $psi
@@ -256,7 +257,7 @@ declare function local:getClicksMap () as map(*)
 declare %updating function local:addTotalCountsIntoProducts ()
 {
 
-     let $allProds := fn:doc("AccumulatedProducts")
+     let $allProds := fn:doc($context||"AccumulatedProducts")
      let $productsMap :=
             map:merge(
               for $rec in $allProds//doc
@@ -274,7 +275,7 @@ declare %updating function local:addTotalCountsIntoProducts ()
 
      let $custCountsMap :=
          map:merge(
-           for tumbling window $prodGroup in fn:doc("Customers")//record
+           for tumbling window $prodGroup in fn:doc($context||"Customers")//record
                 start $first next $second when fn:true()
                 end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
 
@@ -306,9 +307,9 @@ declare %updating function local:addTotalCountsIntoProducts ()
 	 let $orderCount := if (fn:exists ($crmCnt)) then $orderCount + xs:integer($crmCnt/ORDER_COUNT/text()) else $orderCount
          let $amount := if (fn:exists ($crmCnt)) then $amount + $crmCnt/AMOUNT/text() else $amount
 
-         let $orderCount := if (fn:exists ($cstCnt) and fn:empty($crmCnt)) then $orderCount + xs:integer($cstCnt/ORDER_COUNT/text()) else $orderCount         
+         let $orderCount := if (fn:exists ($cstCnt) and fn:empty($crmCnt)) then $orderCount + xs:integer($cstCnt/ORDER_COUNT/text()) else $orderCount
          let $amount := if (fn:exists ($cstCnt) and fn:empty($crmCnt)) then $amount + $cstCnt/AMOUNT/text() else $amount
-         
+
          let $sumSolrFields := (<field name="Amount">{$amount}</field>,
                                        <field name="OrderCount">{$orderCount}</field>)
          return
@@ -319,7 +320,7 @@ declare %updating function local:addTotalCountsIntoProducts ()
 declare %updating function local:addOnlineCustomersIntoProducts ()
 {
 
-     let $allProds := fn:doc("AccumulatedProducts")
+     let $allProds := fn:doc($context||"AccumulatedProducts")
      let $productsMap :=
             map:merge(
               for $rec in $allProds//doc
@@ -328,7 +329,7 @@ declare %updating function local:addOnlineCustomersIntoProducts ()
                     return
                           map:entry($pid,$rec))
 
-     for tumbling window $prodGroup in fn:doc("Customers")//record
+     for tumbling window $prodGroup in fn:doc($context||"Customers")//record
           start $first next $second when fn:true()
           end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
 
@@ -355,7 +356,7 @@ declare %updating function local:addOnlineCustomersIntoProducts ()
 declare %updating function local:addCRMSegmentsIntoProducts ()
 {
 
-     let $allProds := fn:doc("AccumulatedProducts")
+     let $allProds := fn:doc($context||"AccumulatedProducts")
      let $segments := ("Aburcubur","Çay_Kahve","İçecek","Karma_Az","Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik")
      let $productsMap :=
             map:merge(
@@ -395,7 +396,7 @@ declare %updating function local:addCRMSegmentsIntoProducts ()
 declare %updating function local:addCRMDataIntoProductsOrig ()
 {
 
-     let $allProds := fn:doc("AccumulatedProducts")
+     let $allProds := fn:doc($context||"AccumulatedProducts")
      let $segments := ("Aburcubur","Çay_Kahve","İçecek","Karma_Az","Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik")
      let $productsMap :=
             map:merge(
@@ -448,7 +449,7 @@ declare %updating function local:addCRMDataIntoProductsOrig ()
                 end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                   return map:entry($prodGroup[1]/PRODUCT_ID/text(),"1"))
 
-         let $allProds := fn:doc("AccumulatedProducts")
+         let $allProds := fn:doc($context||"AccumulatedProducts")
          for $pid in map:keys($productsMap)
             let $doc := map:get($allAddedMap,$pid)
             return
@@ -462,7 +463,7 @@ declare %updating function local:addCRMDataIntoProductsOrig ()
 declare %updating function local:addCRMCustomersIntoProducts ()
 {
 
-     let $allProds := fn:doc("AccumulatedProducts")
+     let $allProds := fn:doc($context||"AccumulatedProducts")
      let $productsMap :=
             map:merge(
               for $rec in $allProds//doc
@@ -498,7 +499,7 @@ declare function local:getCustMap () as map(*)
 {
   let $rnd := random:new()
   let $productStatistics :=
-      map:merge(for $record in fn:doc("Customers")//record
+      map:merge(for $record in fn:doc($context||"Customers")//record
          let $pid := $record/PRODUCT_ID
          group by $pid
             return
@@ -521,7 +522,7 @@ declare function local:enhanceCustMap ($inProductStatistics as map(*)) as map(*)
       let $rnd := random:new()
       let $productStatistics :=
         map:merge(
-          for $record in fn:doc("Products")//record
+          for $record in fn:doc($context||"Products")//record
               let $pid := $record/*[fn:name() eq "PRODUCT_ID"]/text()
               group by $pid
               return
@@ -568,7 +569,7 @@ declare   %updating function local:addPriceDataIntoProducts ($shortProdMap as ma
 {
    let $priceMap :=
           map:merge(
-          for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record
+          for tumbling window $psiRecordGroup in fn:doc($context||"PSI_stock_info")//record
                   start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
@@ -585,7 +586,7 @@ declare   %updating function local:addPriceDataIntoProducts ($shortProdMap as ma
 
 declare   %updating function local:addPriceDataIntoProductsExt ($shortProdMap as map(*),$clickMap as map(*),$priceMap as map(*),$start as xs:int, $end as xs:int)
 {
-        let $prodStore := fn:doc("AccumulatedProducts")
+        let $prodStore := fn:doc($context||"AccumulatedProducts")
 
 
         (: PSI is sorted based product_id. here we gett all psi data fro per product_id in $psiRecordGroup variable:)
@@ -649,7 +650,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
 
         let $priceMap :=
           map:merge(
-          for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
+          for tumbling window $psiRecordGroup in fn:doc($context||"PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
                   start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
@@ -658,7 +659,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
 
         let $shortProdMap :=
             map:merge(
-              for $rec in fn:doc("CoreProductInfo")//record
+              for $rec in fn:doc($context||"CoreProductInfo")//record
                   let $pid := $rec/PRODUCT_ID/text()
                   let $exist := map:get($priceMap,$pid)
                   where fn:exists($exist)
@@ -667,14 +668,33 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
 
         let $accProdMap :=
             map:merge(
-              for $rec in fn:doc("AccumulatedProducts")//doc
+              for $rec in fn:doc($context||"AccumulatedProducts")//doc
                   let $pid := $rec/field[@name eq "ProductID"]/text()
                   group by $pid
                     return
                           map:entry($pid,$rec))
 
+        let $discountMap :=
+            map:merge(
+                    for $rec in fn:doc($context||"Discounts")//record
+                    let $psi := $rec/PRODUCT_SALES_INFO_ID/text()
+                    return
+                        map:entry($psi,fn:true()))
 
-        for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
+
+	let $ccMap :=
+            map:merge(
+              for $rec in fn:doc($context||"PreviousClicksAddCarts")//doc
+                  let $pid := $rec/str[@name eq "ProductModelID"]/text()
+		  let $nclks := $rec/int[@name eq "NumberOfClicks"]/text()
+		  let $ncarts := $rec/int[@name eq "NumberOfAddCarts"]/text()
+		  let $nclks := if (fn:exists($nclks)) then $nclks else 0
+		  let $ncarts := if (fn:exists($ncarts)) then $ncarts else 0
+                  where fn:exists($pid)
+                    return
+                          map:entry($pid,($nclks,$ncarts)))
+
+        for tumbling window $psiRecordGroup in fn:doc($context||"PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
                   start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $psiPid := $psiRecordGroup[1]/PRODUCT_ID/text()
@@ -700,9 +720,12 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
                                 else $price
                             let $sid := $psiRecordGroup[$k]/STORE_ID/text()
 
+                            let $isDiscount := map:get($discountMap,$psiID)
+
                             let $inPromotion := $isMigroskop eq "1" or
                                                    (($mccP < $price and $mccP > 0.0) or
-                                                    ($accP < $price and $accP > 0.0))
+                                                    ($accP < $price and $accP > 0.0) or
+                                                           $isDiscount)
                             let $isMCC := ($mccP < $price and $mccP> 0.0)
                            (:inStock:true| false based on for each store price ((pm.stock_model <> 1 AND psi.stock_amount > 0) OR  pm.stock_model = 1):)
                             let $inStock := if (($stockModel ne 1 and xs:float($sAmount) > 0) or $stockModel eq 1) then fn:true() else fn:false()
@@ -716,16 +739,22 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
                                <field name="IsMCCProduct_{$sid}">{$isMCC}</field>) else (),
                                <field name="StoreID">{$sid}</field>)
 
+			
+		       let $ccPair := map:get($ccMap,$psiPID)
+		       let $ccPair := if (fn:empty($ccPair)) then (0,0) else $ccPair
 
                        let $nclicks := for $r in $psiIDs
                                           return map:get($clickMap,$r)
-                       let $nclicks := if (fn:empty($nclicks)) then ()
-                                        else <field name="NumberOfClicks">{sum($nclicks)}</field>
+                       let $nclicks := if (fn:empty($nclicks)) then $ccPair[1] else $ccPair[1] + sum($nclicks)
+		       let $nclicks := if ($nclicks eq 0) then () 
+                                        else <field name="NumberOfClicks">{$nclicks}</field>
                        let $pidEntry := <PRODUCT_ID>{$psiPid}</PRODUCT_ID>
 
                        let $nCart := map:get($addCartMap,$psiPid)
-                       let $nAddCarts :=  if (fn:exists($nCart)) then <field name="NumberOfAddCarts">{$nCart}</field>
-                                           else ()
+		       let $nAddCarts :=  if (fn:empty($nCart)) $ccPair[2] else $ccPair[2] + $nCart
+                       let $nAddCarts :=  if ($nAddCarts eq 0) then ()
+					  else <field name="NumberOfAddCarts">{$nAddCarts}</field>
+                                           
 
                        let $addedNodes := ($nclicks,$nAddCarts,$priceTuples)
                        where fn:exists($addedNodes) and fn:exists($accRecord)
@@ -740,7 +769,7 @@ declare   %updating function local:dumpPriceDataIntoFile ($outFileName as xs:str
 
         let $priceMap :=
           map:merge(
-          for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record
+          for tumbling window $psiRecordGroup in fn:doc($context||"PSI_stock_info")//record
                   start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
@@ -812,18 +841,17 @@ declare %updating function local:indexFile ($dbName as xs:string,$outFileName as
 };
 
 declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatures as map(*),$mapFavorites as map(*),$mapProperties as map(*),
-                                                            $pathsmap as map(*),$mapMD as map(*),$shortProdMap as map(*),$mapKeywords as map(*))
+                                                            $pathsmap as map(*),$shortProdMap as map(*),$mapKeywords as map(*))
 {
 
 
-       let $prodStore := fn:doc("AccumulatedProducts")
+       let $prodStore := fn:doc($context||"AccumulatedProducts")
        for $pid in map:keys($shortProdMap)
                   let $record := map:get($shortProdMap,$pid)
 
                   (:get core product data here:)
                   let $prodModID := $record/PRODUCT_MODEL_ID/text()
                   let $pid := $record/PRODUCT_ID/text()
-                  let $pDetail :=  <field name="ProductMoreDetail">{map:get($mapMD,$prodModID)}</field>
 
                   let $pidField:=<field name="ProductID">{$pid}</field>
                   let $pmid :=  <field name="ProductModelID">{$prodModID}</field>
@@ -847,12 +875,10 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
                        {$pidField}
                        {$pmid}
                        {$pmn}
-                       {$pDetail}
                        {$desc}
                        {map:get($mapKeywords,$pid)}
                        <field name="IsMigroskop">{$isMigroskop}</field>
                        <field name="IsNew">{$isNew}</field>
-                       {local:transTurkishChars("ProductMoreDetail",$pDetail/text())}
                        {local:transTurkishChars("ProductModelName",$pmn/text())}
                        {local:transTurkishChars("Description",$desc/text())}
 
@@ -916,45 +942,40 @@ declare   %updating function local:setupProducts ($mapBrands as map(*),$mapFeatu
 };
 
 
-let $modelDetails := fn:doc("ProductModelDetails")
 
 let $mapBrands :=
-  map:merge(for $record in fn:doc("Brands")//record
+  map:merge(for $record in fn:doc($context||"Brands")//record
              return map:entry($record/BRAND_ID/text(),$record/NAME/text()))
 
 let $mapFeatures :=
-  map:merge(for $record in fn:doc("Features")//record
+  map:merge(for $record in fn:doc($context||"Features")//record
              let $pmid := $record/PRODUCT_MODEL_ID
              group by $pmid
              return map:entry($pmid,$record/FEATURE_VALUE/text()))
 
 let $mapFavorites :=
-  map:merge(for $record in fn:doc("Favorites")//record
+  map:merge(for $record in fn:doc($context||"Favorites")//record
              let $pid := $record/PRODUCT_ID
              group by $pid
              return map:entry($pid,$record/CUSTOMER_ID/text()))
 
 let $mapProperties :=
-  map:merge(for $record in fn:doc("Properties")//record
+  map:merge(for $record in fn:doc($context||"Properties")//record
              let $pid := $record/PRODUCT_ID
              group by $pid
              return map:entry($pid,$record/PROPERTY_NAME/text()))
 
 (: temporary. get paths from test:)
 let $pathsmap :=
-  map:merge(for $record in fn:doc("Paths")//record
+  map:merge(for $record in fn:doc($context||"Paths")//record
                 let $pid := $record/PRODUCT_MODEL_ID
                 group by $pid
                 return map:entry($pid,$record))
 
-let $mapMD :=
-  map:merge(for $record in $modelDetails//record
-             return map:entry(($record/entry)[1]/text(), ($record/entry)[2]/text()))
-
 
  let $priceMap :=
           map:merge(
-          for tumbling window $psiRecordGroup in fn:doc("PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
+          for tumbling window $psiRecordGroup in fn:doc($context||"PSI_stock_info")//record (: test temporarily with "PSI_sorted. Change it to PSI_stock_info later":)
                   start $first next $second when fn:true()
                   end $last next $beyond when $last/PRODUCT_ID ne $beyond/PRODUCT_ID
                     let $pid := $psiRecordGroup[1]/PRODUCT_ID/text()
@@ -963,7 +984,7 @@ let $mapMD :=
 
 let $shortProdMap :=
 map:merge(
-  for $rec in fn:doc("CoreProductInfo")//record
+  for $rec in fn:doc($context||"CoreProductInfo")//record
       let $pid := $rec/PRODUCT_ID/text()
       let $exist := map:get($priceMap,$pid)
       group by $pid
@@ -972,7 +993,7 @@ map:merge(
               map:entry($pid,$rec))
 
 let $mapKeywords :=
-  map:merge(for $record in fn:doc("SearchKeywords")//record
+  map:merge(for $record in fn:doc($context||"SearchKeywords")//record
              let $keys :=
               for $key in $record//Keyword
                 return
@@ -983,12 +1004,12 @@ let $mapKeywords :=
   (:
 let $action := "coresetup"
 return
-  local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$mapMD ,$shortProdMap )
+  local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$shortProdMap )
   :)
 
 return
    if ($action eq "coresetup") then
-    local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$mapMD ,$shortProdMap,$mapKeywords )
+    local:setupProducts ($mapBrands,$mapFeatures,$mapFavorites ,$mapProperties ,$pathsmap ,$shortProdMap,$mapKeywords )
   else if ($action eq "addcrm1") then
         local:addCRMSegmentsIntoProducts ()
   else if ($action eq "addcrm2") then

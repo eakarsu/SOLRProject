@@ -1,15 +1,7 @@
-#!/bin/bash
 
-set -x #echo on
+csfolder=$1
 
-
-host=$1
-port=$2
-webpath=$3
-
-ROOT=$(cd $(dirname "$0"); pwd)
-
-read activeCoreName < $ROOT/../webuiprod/src/ACTIVE_CORE_NAME
-
-echo "activeCoreName = ${activeCoreName}"
-
+for csfile in ${csfolder}/*.xml
+do
+  echo "file =${csfile}"
+done

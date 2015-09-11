@@ -1,13 +1,18 @@
+
+declare variable $allAddCartsDoc as xs:string external;
+declare variable $coreProductInfo as xs:string external;
+declare variable $rawKeywordsFile as xs:string external;
+
 let $prodMap :=
 map:merge(
-  for $rec in fn:doc("CoreProductInfo")//record
+  for $rec in fn:doc($coreProductInfo)//record
       let $pid := $rec/PRODUCT_ID/text()
       let $pmn := $rec/PRODUCT_MODEL_NAME/text()
       return
           map:entry($pid,$pmn))
           
 let $list :=
-  for $record in fn:doc("purchaseStats")//AddedToCart
+  for $record in fn:doc($allAddCartsDoc)//doc
                      let $pid := $record/ProductID/text()
                      where $pid ne "" and fn:not(fn:empty($pid))
                      group by $pid
@@ -34,5 +39,6 @@ let $list :=
 			else ()
  
                             (: {$keywords[fn:position() < 10]} :)
- return <add>{$list}</add>
+ return file:write($rawKeywordsFile,
+		  <add>{$list}</add>)
 

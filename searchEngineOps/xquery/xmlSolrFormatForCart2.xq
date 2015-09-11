@@ -1,10 +1,12 @@
 (: This script products data to load into SOLR. The result file will be imported into XML DB called "CSstreamCartInfoMap" :)
 
-let $outfile := "/tmp/addcart.xml"
+declare variable $outfile as xs:string external;
+declare variable $cartInfoDoc as xs:string external;
+
 let $res := file:write-text($outfile,"<add>")
 
 let $list :=
-    for $record at $k in fn:doc("CSstreamCartInfo")//AddedToCart
+    for $record at $k in fn:doc($cartInfoDoc)//AddedToCart
                  let $pids := $record/ProductID/text()
                  let $sids := $record/StoreID/text()
                  let $amounts := $record/Amount/text()

@@ -1,0 +1,16 @@
+SELECT 
+  psi.product_id,
+  psi.price,
+  psi.mcc_price,
+  psi.action_price,
+  psi.promotion_type,
+  psi.product_sales_info_id,
+  psi.stock_amount,
+  st.store_id
+FROM 
+  MACROCENTER.PRODUCT_SALES_INFOS psi,
+  MACROCENTER.STORES st
+WHERE
+ psi.store_id              = st.store_id
+AND st.is_active              = 1
+ORDER BY psi.product_id

@@ -1,4 +1,4 @@
-(:
+﻿(:
 Clickstream datasından linkleri aşağıdaki şekilde alabilirsiniz. Sabah test dataları güncellenmiş olucak.
 
 - Ürün Gözat Sayfaları için :
@@ -19,10 +19,10 @@ Diğer Tüm Sayfalarda : addToCart.do
 declare namespace urlDecoder = "java.net.URLDecoder";
 declare variable $inputDoc as xs:string external;
 declare variable $docNum as xs:string external;
-(:
+
 declare variable $clickCountDoc as xs:string external;
 declare variable $addCartDoc as xs:string external;
-:)
+
 
 
 declare function local:getParam ($rec as element()*,$paramName as xs:string) as xs:string*
@@ -65,14 +65,16 @@ declare function local:getPath ($rec as element() *) as xs:string*
 };
 
  
-    
-declare function local:processOneSearchSession ($cid as xs:string,$filecart as xs:string,$fileclick as xs:string,$clickReq as xs:string,
-                                                $addCartReq as xs:string,$searchGroups as element()*) as element()*
+ 
+declare  %updating function local:processOneSearchSession ($cid as xs:string,$filecart as element()*,$fileclick as element()*,$clickReq as xs:string,
+                                                $addCartReq as xs:string,$searchGroups as element()*)
 {
-    let $tmp := ""
+    let $contextVals := "search|detail|lazyDetail|qSearch"
     for $group in $searchGroups
         let $searchReq := $group/*[fn:position() eq 1]
         let $keyword := local:getParam($searchReq,"searchKeyword")
+        let $context := local:getParam($searchReq,"context")
+        let $isNotContext := fn:not(fn:matches($context,$contextVals))
         let $clickRequests := $group/*[fn:matches(./REQUEST_URI/text(),$clickReq)] 
         let $isClicked := fn:not (fn:empty($clickRequests))
         let $clickedPsi := if (fn:not($isClicked)) then ()
@@ -84,20 +86,20 @@ declare function local:processOneSearchSession ($cid as xs:string,$filecart as x
                                  return $crval
                              return $crvals
                                    
-        let $clickRec := if (fn:empty($clickedPsi)) then ()
+        let $clickRec := if (fn:empty($clickedPsi) or $isNotContext) then ()
                          else
                           let $psis :=
-      for $item in $clickedPsi
-        return
-          <clickedPsi>{$item}</clickedPsi>
+                              for $item in $clickedPsi
+                                return
+                                  <clickedPsi>{$item}</clickedPsi>
                           return
                           <Clicked>
                                <Keyword>{$keyword}</Keyword>
                                <IsClicked>{$isClicked}</IsClicked>
                                <CustomerID>{$cid}</CustomerID>
                                {$psis}
-                           </Clicked> 
-                             
+                           </Clicked>
+
         let $cartItems:= 
           for $addToCartReq in $group/*[fn:matches(./REQUEST_URI/text(),$addCartReq)] 
             let $psi := local:getParam($addToCartReq,"psi") 
@@ -110,31 +112,26 @@ declare function local:processOneSearchSession ($cid as xs:string,$filecart as x
            
             let $keywords := fn:string-join($keyword,",")
             return 
-              if ( fn:empty($keyword) or $keywords eq "") then ()
+              if ( fn:empty($keyword) or $keywords eq "" or $isNotContext) then ()
               else
-         for $nextpid in $pid
-           return
-                <AddedToCart>
-                    <Keyword>{$keywords}</Keyword>
-                    <ProductID>{$nextpid}</ProductID>
-                    <Amount>{$amount}</Amount>
-                    <StoreID>{$storeid}</StoreID>
-                    <CustomerID>{$cid}</CustomerID>
-                    <addToCartPsi>{$psi}</addToCartPsi>
-                  </AddedToCart>
+                 for $nextpid in $pid
+                   return
+                        <AddedToCart>
+                            <Keyword>{$keywords}</Keyword>
+                            <ProductID>{$nextpid}</ProductID>
+                            <Amount>{$amount}</Amount>
+                            <StoreID>{$storeid}</StoreID>
+                            <CustomerID>{$cid}</CustomerID>
+                            <addToCartPsi>{$psi}</addToCartPsi>
+                          </AddedToCart>
         return 
-        (if (fn:not(fn:empty($clickRec))) then file:append($fileclick,$clickRec) else (),
-        if (fn:not(fn:empty($cartItems))) then file:append($filecart,$cartItems) else ())
+        (if (fn:exists($clickRec)) then insert nodes $clickRec into $fileclick  else (),
+        if (fn:exists($cartItems)) then insert nodes $cartItems into $filecart  else ()) 
 };
-
-
-let $fileclick := "/tmp/clicks" || $docNum || ".xml"
-let $filecart := "/tmp/carts" || $docNum || ".xml"
  
-(:
-let $clickDoc := fn:doc($clickCountDoc)//RECORDS
-let $cartDoc := fn:doc($addCartDoc)//RECORDS
-:)
+
+let $fileclick := fn:doc($clickCountDoc)//RECORDS
+let $filecart := fn:doc($addCartDoc)//RECORDS
 
 let $ignores :=
 "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?getFastPurchaseProductList.do|"||
@@ -185,7 +182,7 @@ return
 
             return 
                 local:processOneSearchSession ($cid,$filecart,$fileclick ,$clickReq ,
-                                                            $addCartReq ,$searchGroups )     
+                                                            $addCartReq ,$searchGroups )    
      
 
        

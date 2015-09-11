@@ -1,4 +1,8 @@
 (: This script products data to load into SOLR. The result file will be imported into XML DB called "CSstreamClickInfoMap" :)
+
+declare variable $outfile as xs:string external;
+declare variable $clickInfoDoc as xs:string external;
+
 let $priceMap :=
           map:merge(
           for $psiRecord in fn:doc("PSI_All")//record
@@ -7,11 +11,10 @@ let $priceMap :=
                     return
                       map:entry($psi,$pid))
 let $c := 0
-let $outfile := "/tmp/clicks.xml"
 let $res := file:write-text($outfile,"<add>")
 
 let $list :=
-   for $record at $k in (fn:doc("CSstreamClickInfo")//Clicked)[fn:position() ge $c]
+   for $record at $k in (fn:doc($clickInfoDoc)//Clicked)[fn:position() ge $c]
                  let $clickedPsi := $record/clickedPsi/text()
 		 let $keyword := $record/Keyword/text()               
                  let $pidRecs :=

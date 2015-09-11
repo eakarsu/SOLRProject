@@ -1,0 +1,1 @@
+select CUSTOMER_ID,MIGROS_CARD_NO from KANGURUM.customers

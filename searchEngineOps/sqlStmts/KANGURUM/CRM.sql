@@ -5,9 +5,9 @@ SELECT p.product_id,
   SUM(crm.product_quantity_sum) "AMOUNT",
   SUM(crm.product_trans_count) "ORDER_COUNT"
 FROM CRM.SPSS_VM_KART_ITEM crm,
-  product_models pm,
-  products p,
-  customers cs,
+  KANGURUM.product_models pm,
+  KANGURUM.products p,
+  KANGURUM.customers cs,
   CRM.SPSS_VM_SEGMENT seg
 WHERE TO_CHAR(crm.item_number) = REGEXP_REPLACE(pm.shop_code,'^0+','')
 AND crm.MIGROSCARDNUMBER       = seg.MIGROSCARDNUMBER

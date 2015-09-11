@@ -868,7 +868,7 @@ function makeFilterBooleanExprTagExclude (facetList,customerid,storeid)
 					unitSymbol = lb;
 					lb = "*";
 					ub = "*";
-				}    
+				}
                 var rangeQuery = "["+lb+ " TO "+ub+"]";
                 var localPropName = "UnitVal_"+unitSymbol;
                 var rangeExpr = localPropName+":"+rangeQuery;
@@ -1331,7 +1331,7 @@ function getPostedFacetQueryParam(postBody)
 function getCustomerSegment(customerID){
 		var segments = ["Aburcubur","Çay_Kahve","İçecek","Karma_Az",
 		"Meyve_Sebze","Saç_Bakım","Süt_Su-Maden","Taze_Tüketim","Temizlik"];
-     
+
         var solrBody;
         var cstUrl = "http://"+host+":"+port+"/migrossolr/CustomerSegments/select?q=CustomerID:"+customerID+"&wt=json&indent=true&rows=80" ;
         console.log ("Using to find customer segment"+cstUrl);
@@ -1344,18 +1344,18 @@ function getCustomerSegment(customerID){
         }
         var solrdata = JSON.parse(solrBody);
 		var docs = solrdata.response.docs;
-		var segment = ""; 
+		var segment = "";
 		if (docs.length > 0){
 			segment = docs[0].CustomerSegment;
 			segment = "10"+(segments.indexOf(segment)+1);
-		}  
+		}
         console.log ("Found Segment :"+segment+" for customerID:"+customerID);
         return segment;
-   };  
-    
+   };
+
 function prepareBQOnlySOLRQuery2(query)
 {
-   
+
     //var query = url.parse(request.url, true).query;
     var start = query.start;
     var queryKeyword = query.q;
@@ -1374,8 +1374,8 @@ function prepareBQOnlySOLRQuery2(query)
 	if (custsegmentid == "") {
 		custsegmentid = getCustomerSegment (customerid);
 		query.custsegmentid = custsegmentid;
-	} 
-	
+	}
+
     if (typeof start === 'undefined') {
         start = 0;
         console.log("setting start to 0");

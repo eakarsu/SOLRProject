@@ -8,9 +8,9 @@ SELECT pm.PRODUCT_MODEL_ID,
   p.PRODUCT_ID,  
   pm.stock_model,
   pm.IS_NEW
-FROM PRODUCTS p,
-  PRODUCT_MODELS pm,
-  SHOPS s
+FROM KANGURUM.PRODUCTS p,
+  KANGURUM.PRODUCT_MODELS pm,
+  KANGURUM.SHOPS s
 WHERE
 p.product_model_id        = pm.product_model_id
 AND p.is_active               = 1
