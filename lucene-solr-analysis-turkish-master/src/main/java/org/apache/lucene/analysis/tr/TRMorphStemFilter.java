@@ -117,7 +117,7 @@ public final class TRMorphStemFilter extends TokenFilter {
 		return true;
 	}
 
-	static String stem(String word, String aggregation) throws IOException {
+	static String stemUDP(String word, String aggregation) throws IOException {
 
 		List<String> parses = parseLocal(word);
 
@@ -161,6 +161,44 @@ public final class TRMorphStemFilter extends TokenFilter {
 		}
 	}
 
+	static String stem(String word, String aggregation) throws IOException {
+
+		List<String> parses = parseLocal(word);
+
+		TreeSet<String> set = new TreeSet<>();
+
+		for (String parse : parses) {
+			String[] parts = parse.split("\\s+");
+			
+			String stem = parts[0].trim();
+			int i = stem.indexOf("<");
+
+			if (i == -1) {
+				if (stem.contains("+?")) {
+					return word;
+				} else {
+					// log.warn("unexpected stem " + stem);
+					continue;
+				}
+			}
+			set.add(stem.substring(0, i));
+		}
+ 
+		if (set.size() == 0) {
+			return word;
+		}
+
+		switch (aggregation) {
+		case "maxLength":
+			return set.pollLast();
+		case "minLength":
+			return set.pollFirst();
+		default:
+			throw new RuntimeException("unknown strategy " + aggregation);
+		}
+	}
+
+	
 	private static List<String> parse(String word) throws SocketException, UnknownHostException, IOException {
 		long b = System.currentTimeMillis();
 
@@ -204,14 +242,16 @@ public final class TRMorphStemFilter extends TokenFilter {
 		long b = System.currentTimeMillis();
 
 		String stemWord = FomaWrapper.findStemWord(word,fsm);
+		
 		List<String> list = new ArrayList<>();
-
-		String w;
-		String[] lines = stemWord.split("\n");
-		for (String line : lines) {
-			w = line.trim();
-			if (w.length() > 0) {
-				list.add(w);
+		if (!stemWord.trim().isEmpty()){
+			String w;
+			String[] lines = stemWord.split("\n");
+			for (String line : lines) {
+				w = line.trim();
+				if (w.length() > 0) {
+					list.add(w);
+				}
 			}
 		}
 		long e = System.currentTimeMillis();
@@ -228,9 +268,12 @@ public final class TRMorphStemFilter extends TokenFilter {
 				+ "kültürel ve sosyal ilişkilerin gelişmesini arzu ettiklerini kaydeden Andrei Savinykh ülkesinin Kırgızistan"
 				+ "ve Kazakistan ile Gümrük Birliği anlaşması bulunduğunu önümüzdeki sütlü fındıklı";
 
-		parseLocal("yaptığı");
-		parseLocal("konuşmada");
-		parseLocal("gelişmesini");
+		//parseLocal("yaptığı");
+		//parseLocal("konuşmada");
+		//parseLocal("gelişmesini");
+		System.out.println ("STEP works?"+
+				stem("gelişmesini","maxLength"));
+		 
 		
 		/*
 		 * for (String s : a.split("\\s+")) { //parse(s); String root =
