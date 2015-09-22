@@ -22,7 +22,6 @@
               let $sqlStmt := fn:replace($sqlStmt,"SDATE",$sDate)
               let $sqlStmt := fn:replace($sqlStmt,"EDATE",$eDate)
               (: temporary code here. Pelase delete this one late:)
-              let $sqlStmt := fn:replace($sqlStmt,"2015","2014")
               return $sqlStmt
           else if ($month eq 0) then $sqlStmt
           else
@@ -39,8 +38,8 @@
 
        let $outputfile := fn:replace($outputfile,".sql",fn:concat($month,".sql"))
        let $addBegin := file:write-text($outputfile,"<RECORDS>","UTF-8")
-       let $url := "jdbc:oracle:thin:kangurum/ferhatpasa@212.12.132.196:1521/kngdb"   
-
+       let $url := "jdbc:oracle:thin:kangurum/planetuc9@212.12.132.211:1521/kangpdb.sanalmarket.com.tr"
+       (: let $url := "jdbc:oracle:thin:kangurum/ferhatpasa@212.12.132.196:1521/kngdb"    :)
        (: let $url := "jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST"   :)
 
        let $conn  := sql:connect($url)
@@ -59,5 +58,5 @@
                file:append( $outputfile, $windowData)
 
        return
-         ($list,file:append-text($outputfile,"</RECORDS>","UTF-8"))
+         ($list,file:append-text($outputfile,"</RECORDS>","UTF-8"),$sqlStmt)
 
