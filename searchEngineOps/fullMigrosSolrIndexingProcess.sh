@@ -38,4 +38,9 @@ $ROOT/prepareSolrInputForContext2.sh MACROCENTER &
 
 wait
 
+#start importing data
+$ROOT/postIndexProcess.sh $host $port  $webpath MACROCENTER
+
+$ROOT/postIndexProcess.sh $host $port  $webpath KANGURUM
+
 echo "$(date): Full Indexing process finished "
