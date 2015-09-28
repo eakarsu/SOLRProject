@@ -740,7 +740,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
                                <field name="StoreID">{$sid}</field>)
 
 			
-		       let $ccPair := map:get($ccMap,$psiPID)
+		       let $ccPair := map:get($ccMap,$psiPid)
 		       let $ccPair := if (fn:empty($ccPair)) then (0,0) else $ccPair
 
                        let $nclicks := for $r in $psiIDs
@@ -751,7 +751,7 @@ declare   %updating function local:addPriceDataIntoAccumulatedFile ()
                        let $pidEntry := <PRODUCT_ID>{$psiPid}</PRODUCT_ID>
 
                        let $nCart := map:get($addCartMap,$psiPid)
-		       let $nAddCarts :=  if (fn:empty($nCart)) $ccPair[2] else $ccPair[2] + $nCart
+		       let $nAddCarts :=  if (fn:empty($nCart)) then $ccPair[2] else $ccPair[2] + $nCart
                        let $nAddCarts :=  if ($nAddCarts eq 0) then ()
 					  else <field name="NumberOfAddCarts">{$nAddCarts}</field>
                                            

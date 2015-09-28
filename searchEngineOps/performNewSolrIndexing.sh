@@ -32,12 +32,14 @@ echo "Pulling CRM data. This is common for MACRO and KANG so that we pull once"
 echo "Prepare Solr index data in xml"
 $ROOT/prepareSolrIndexData.sh  ${CONTEXT}
 
+exit
+
 echo "Splitting files into multiple ones to expedidate indexing process"
-$ROOT/prepareSolrInputFiles.sh  ${CONTEXT}
+#$ROOT/prepareSolrInputFiles.sh  ${CONTEXT}
 
 echo "Now index All Migros data in SOLR"
 
-$ROOT/performSolrIndexing.sh localhost 8080 migrossolr  ${CONTEXT}
+#$ROOT/performSolrIndexing.sh localhost 8080 migrossolr  ${CONTEXT}
 
 $ROOT/populateCampaigns.sh localhost 8080 migrossolr  ${CONTEXT}
 

@@ -1,10 +1,11 @@
 let $list :=
-    for $record in fn:doc("CSstreamCartInfo")//AddedToCart
+    for $record at $j in fn:doc("KANGURUMCSstreamCartInfo")//AddedToCart
                  let $pid := $record/ProductID/text() 
                  where $pid ne "" and fn:not(fn:empty($pid))
                   return
                    <doc>
                        <field name="Keyword">{$record/Keyword/text()}</field>
+                       <field name="CStreamID">{$j}</field>
                        <field name="CustomerID">{$record/CustomerID/text()}</field>
                         <field name="ProductID">{$record/ProductID/text()}</field>
                          <field name="StoreID">{$record/StoreID/text()}</field>

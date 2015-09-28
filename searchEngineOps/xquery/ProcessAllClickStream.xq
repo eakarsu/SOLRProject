@@ -1,4 +1,4 @@
-﻿(:
+(:
 Clickstream datasından linkleri aşağıdaki şekilde alabilirsiniz. Sabah test dataları güncellenmiş olucak.
 
 - Ürün Gözat Sayfaları için :
@@ -67,14 +67,13 @@ declare function local:getPath ($rec as element() *) as xs:string*
  
  
 declare  %updating function local:processOneSearchSession ($cid as xs:string,$filecart as element()*,$fileclick as element()*,$clickReq as xs:string,
-                                                $addCartReq as xs:string,$searchGroups as element()*)
+                                                $addCartReq as xs:string,$searchGroups as element()*) 
 {
+  
     let $contextVals := "search|detail|lazyDetail|qSearch"
     for $group in $searchGroups
         let $searchReq := $group/*[fn:position() eq 1]
         let $keyword := local:getParam($searchReq,"searchKeyword")
-        let $context := local:getParam($searchReq,"context")
-        let $isNotContext := fn:not(fn:matches($context,$contextVals))
         let $clickRequests := $group/*[fn:matches(./REQUEST_URI/text(),$clickReq)] 
         let $isClicked := fn:not (fn:empty($clickRequests))
         let $clickedPsi := if (fn:not($isClicked)) then ()
@@ -86,7 +85,7 @@ declare  %updating function local:processOneSearchSession ($cid as xs:string,$fi
                                  return $crval
                              return $crvals
                                    
-        let $clickRec := if (fn:empty($clickedPsi) or $isNotContext) then ()
+        let $clickRec := if (fn:empty($clickedPsi)) then ()
                          else
                           let $psis :=
                               for $item in $clickedPsi
@@ -102,6 +101,10 @@ declare  %updating function local:processOneSearchSession ($cid as xs:string,$fi
 
         let $cartItems:= 
           for $addToCartReq in $group/*[fn:matches(./REQUEST_URI/text(),$addCartReq)] 
+
+            let $context := local:getParam($addToCartReq,"context")
+            let $isNotContext := fn:not(fn:matches($context,$contextVals)) and fn:not(fn:matches($addToCartReq/REQUEST_URI/text(),"^/macro"))
+
             let $psi := local:getParam($addToCartReq,"psi") 
             let $pid := local:getParam($addToCartReq,"productid")
             let $pid := if (fn:empty($pid)) then local:getParam($addToCartReq,"productids") else $pid (: products_2, 3. 5 ... :)
@@ -126,41 +129,71 @@ declare  %updating function local:processOneSearchSession ($cid as xs:string,$fi
                           </AddedToCart>
         return 
         (if (fn:exists($clickRec)) then insert nodes $clickRec into $fileclick  else (),
-        if (fn:exists($cartItems)) then insert nodes $cartItems into $filecart  else ()) 
+        if (fn:exists($cartItems)) then insert nodes $cartItems into $filecart  else ())  
 };
  
-
+ 
 let $fileclick := fn:doc($clickCountDoc)//RECORDS
-let $filecart := fn:doc($addCartDoc)//RECORDS
+let $filecart := fn:doc($addCartDoc)//RECORDS  
 
-let $ignores :=
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?getFastPurchaseProductList.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?lastBoughtProducts.do|"|| 
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?kangmessages.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?addCustomerOpinion.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?showStaticHelpPage.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?showStaticPage.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?checkProductInBasket.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(prview/?)(/)?ajaxUpdateBasket.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?kangmessages.do"
+let $webcontext := "(kweb|macro|mobile-v1)"
+let $prefix :=  "^/("||$webcontext||"|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?"
 
+let $ignores := 
+$prefix||"lastBoughtProducts.do|"||
+$prefix||"kangmessages.do|"||
+$prefix||"addCustomerOpinion.do|"||
+$prefix||"showStaticHelpPage.do|"||
+$prefix||"showStaticPage.do|"||
+$prefix||"checkProductInBasket.do|"||
+"^/("||$webcontext||"|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(prview/?)(/)?ajaxUpdateBasket.do|"||
+$prefix||"kangmessages.do"
+
+let $extraSearchReq :=
+$prefix||"getFastPurchaseProductList.do|"||
+$prefix||"crossPromotionList.do|"||
+$prefix||"customerAlertsList.do|"||
+$prefix||"customerMyAccountList.do|"||
+$prefix||"getCategoryList.do|"||
+$prefix||"getCrossPromotionsList.do|"||
+$prefix||"getDonationsProductList.do|"||
+$prefix||"getFastPurchaseProductList.do|"||
+$prefix||"getGiftDiscountProductList.do|"||
+$prefix||"getLastVisitedSanalMarketProductList.do|"||
+$prefix||"getMccDiscountProductList.do|"||
+$prefix||"getMigroskopDiscountProductList.do|"||
+$prefix||"getMigroskopHeadLightProductsList.do|"||
+$prefix||"getOrderProductList.do|"||
+$prefix||"getProductList.do|"||
+$prefix||"giftDiscountList.do|"||
+$prefix||"mccDiscountList.do|"||
+$prefix||"migroskopDiscountList.do|"||
+$prefix||"migroskopHeadLightProductsList.do|"||
+$prefix||"showFavoritesCategoriesList.do|"||
+$prefix||"showFavoritesList.do|"||
+$prefix||"showFavoritesCategoriesList.do|"||
+$prefix||"lastVisitedSanalMarketProductListing.do|"||
+$prefix||"productListing.do|"||
+$prefix||"shopProductListing.do|"||
+$prefix||"browseShopCatalog"
+ 
 let $glb :=
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?lastBoughtProducts.do"
+$prefix||"lastBoughtProducts.do"
 
 let $searchReq := 
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?searchInShop.do|"||
-"^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?qs.do"
-
+$prefix||"searchInShop.do|"||
+$prefix||"qs.do"
+ 
 let $clickReq := 
-    "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?getLazyProductDetail.do|"||
-    "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?showProductDetail.do|"||
-    "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?prview|/kweb/(/)?prcview"
+    $prefix||"getLazyProductDetail.do|"||
+    $prefix||"showProductDetail.do|"||
+    $prefix||"prview|/"||$webcontext||"/(/)?prcview"
 
 let $addCartReq :=  
-   "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?addMultipleProductsToCart.do|"||
-   "^/(kweb|mobile/android|mobile/iphone|mobile/bb|mobile/qq|mobile/ipad)/(/)?addToCart.do"
+   $prefix||"addMultipleProductsToCart.do|"||
+   $prefix||"addToCart.do"
 
-
+ 
 return
   for $rec in (fn:doc($inputDoc)//record)
     let $cid := $rec/CUSTOMER_ID/text()
@@ -168,22 +201,28 @@ return
     let $ts := fn:replace($ts," ","T")
     let $timeStamp := xs:dateTime($ts)
 
-    where fn:not(fn:matches($rec/REQUEST_URI/text(),$ignores))   
+    where fn:not(fn:matches($rec/REQUEST_URI/text(),$ignores))    
     order by $timeStamp
     group by $cid
     return
             let $searchGroups := 
               for tumbling window $w in $rec
-                      start $first at $s when (fn:matches($first/REQUEST_URI/text(),$searchReq)) 
-                      end $last next $beyond when fn:not( 
-                                                   fn:matches($beyond/REQUEST_URI/text(),$clickReq) or
-                                                   fn:matches($beyond/REQUEST_URI/text(),$addCartReq)) 
-		return <w>{$w}</w>
+                      start $first at $s when (fn:matches($first/REQUEST_URI/text(),$searchReq||"|"||$extraSearchReq)) 
+                      end $last next $beyond when fn:matches($beyond/REQUEST_URI/text(),$searchReq||"|"||$extraSearchReq) 
+
+                      return if (fn:matches($first/REQUEST_URI/text(),$searchReq) and fn:count($w) gt 1) then
+                                  <w>{$w}</w>
+                              else ()
 
             return 
+              
                 local:processOneSearchSession ($cid,$filecart,$fileclick ,$clickReq ,
-                                                            $addCartReq ,$searchGroups )    
-     
+                                                            $addCartReq ,$searchGroups )  
 
-       
+
+
+
+
+      
+
 

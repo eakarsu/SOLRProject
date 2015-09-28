@@ -120,22 +120,23 @@
    <!-- Migros variables here -->
    <field name="shopCategoryNameEn" type="text_tr" indexed="true" stored="true" multiValued="true"/>
    <field name="shopCategoryName" type="text_tr" indexed="true" stored="true" multiValued="true"/>
-   <field name="shopCategoryId" type="text_tr" indexed="true" stored="true" multiValued="true"/>
+   <field name="shopCategoryId" type="string" indexed="true" stored="true" multiValued="true"/>
 
-   <field name="ProductModelID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+   <field name="ProductModelID" type="string" indexed="true" stored="true"  multiValued="false" />
    <field name="ProductID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
    <field name="ProductModelName" type="text_tr" indexed="true" stored="true"/>
    <field name="Description" type="text_tr" indexed="false" stored="true"/>
-   <field name="ShopCode" type="text_tr" indexed="true" stored="true"/>
-   <field name="ShopID" type="text_tr" indexed="true" stored="true"/>
-   <field name="StoreID" type="text_tr" indexed="true" multiValued="true" stored="true"/>
-   <field name="SearchKeywordValue" type="text_tr" multiValued="true" indexed="true" stored="true"/>
-   <field name="CategoryID" type="text_tr" indexed="true" multiValued="true" stored="true"/>
+   <field name="ShopCode" type="string" indexed="true" stored="true"/>
+   <field name="ShopID" type="string" indexed="true" stored="true"/>
+   <field name="StoreID" type="string" indexed="true" multiValued="true" stored="true"/>
+   <field name="SearchKeyword" type="text_tr" multiValued="true" indexed="true" stored="true"/>
+   <field name="SearchKeywordExact" type="textExact" multiValued="true" stored="true" indexed="true"/>
+   <field name="CategoryID" type="string" indexed="true" multiValued="true" stored="true"/>
    <field name="SearchBoost" type="text_tr" multiValued="true" indexed="true" stored="true"/>
    <field name="ProductMoreDetail" type="text_tr" indexed="false" stored="true"/>
    <field name="ProductModelNameExact" type="textExact" stored="true" indexed="true"/>
-   <field name="CustomersPurchased" type="text_tr" indexed="true" multiValued="true" stored="true"/>
-   <field name="CustomersFavourite" type="text_tr" indexed="true" multiValued="true" stored="true"/>
+   <field name="CustomersPurchased" type="string" indexed="true" multiValued="true" stored="true"/>
+   <field name="CustomersFavourite" type="string" indexed="true" multiValued="true" stored="true"/>
    <field name="ProductProperty" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="CategoryPath" type="text_tr" indexed="true" multiValued="true" stored="true"/>
    <field name="ProductFeatures" type="text_tr" indexed="true"  multiValued="true" stored="true"/>
@@ -143,7 +144,7 @@
    <field name="PathLevel2" type="notoktext_tr" indexed="true" stored="true" multiValued="true"/>	
    <field name="Description_TR" type="textExact" indexed="false"  multiValued="true" stored="false"/>
    <field name="ProductFeatures_TR" type="textExact" indexed="true"  multiValued="true" stored="false"/>
-   <field name="SearchKeywordValue_TR" type="textExact" multiValued="true" indexed="true" stored="false"/>
+   <field name="SearchKeyword_TR" type="textExact" multiValued="true" indexed="true" stored="false"/>
    <field name="ProductModelName_TR" type="textExact" indexed="true" stored="false"/>
    <field name="ProductMoreDetail_TR" type="textExact" indexed="false" stored="false"/>
    <field name="BrandName" type="notoktext_tr" indexed="true" stored="true"/>
@@ -159,11 +160,12 @@
    <field name="ProductModelName_Sort" type="alphaOnlySort" indexed="true" stored="false"/>
 
    <!-- Facets -->
-   <field name="BrandName_Facet" type="notoktext_tr_facet" indexed="true" stored="false"/>
-   <field name="PathLevel2_Facet" type="notoktext_tr_facet" indexed="true" stored="false" multiValued="true"/>
-   <field name="ProductProperty_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
-   <field name="UnitSymbol_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
-   <field name="UnitExpr_Facet" type="notoktext_tr_facet" indexed="true" multiValued="true" stored="false"/>
+   <field name="BrandName_Facet" type="string" indexed="true" stored="false"/>
+   <field name="PathLevel2_Facet" type="string" indexed="true" stored="false" multiValued="true"/>
+   <!--<field name="PathLevel2_Facet" type="string" indexed="true" stored="false" multiValued="true"/>-->
+   <field name="ProductProperty_Facet" type="string" indexed="true" multiValued="true" stored="false"/>
+   <field name="UnitSymbol_Facet" type="string" indexed="true" multiValued="true" stored="false"/>
+   <field name="UnitExpr_Facet" type="string" indexed="true" multiValued="true" stored="false"/>
     
    <!-- Price Fields. Triple price value per store -->  
    <dynamicField name="UnitSymbol_*" type="notoktext_tr" indexed="true" stored="true"  multiValued="true" />
@@ -377,7 +379,8 @@
 
 <!-- copy all turkish text fields for Migros -->
    <copyField source="ProductModelName" dest="turkishtext"/>
-   <copyField source="SearchKeywordValue" dest="turkishtext"/>
+   <copyField source="SearchKeyword" dest="turkishtext"/>
+   <copyField source="SearchKeyword" dest="SearchKeywordExact"/>
    <copyField source="ProductModelName" dest="ProductModelNameExact" />
    <copyField source="PathLevel2" dest="turkishtext"/>
    <copyField source="ProductFeatures" dest="turkishtext"/>
@@ -385,7 +388,7 @@
    <copyField source="BrandName" dest="turkishtext"/>
 
    <copyField source="ProductModelName_TR" dest="text"/>
-   <copyField source="SearchKeywordValue_TR" dest="text"/>
+   <copyField source="SearchKeyword_TR" dest="text"/>
    <copyField source="ProductFeatures_TR" dest="text"/>
    <copyField source="BrandName_TR" dest="text"/>
 

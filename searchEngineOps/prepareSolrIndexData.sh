@@ -22,4 +22,12 @@ $BASEX_HOME/bin/basex -baction=addcrm4  -bcontext=${CONTEXT} $ROOT/xquery/Prepar
 echo "$(date): Adding Product Sales Infos data into solr input files .."
 $BASEX_HOME/bin/basex -baction=addpsi  -bcontext=${CONTEXT} $ROOT/xquery/PrepareMigrosData.xq
 
+echo "$(date): Preparing solr input files context=${CONTEXT}"
+$BASEX_HOME/bin/basexclient -p1984 -Padmin -Uadmin << EOF
+ OPEN ${CONTEXT}AccumulatedProducts
+ EXPORT $ROOT/solrinputfiles/${CONTEXT}
+ EXIT
+EOF
+
+
 echo "$(date): Finished"

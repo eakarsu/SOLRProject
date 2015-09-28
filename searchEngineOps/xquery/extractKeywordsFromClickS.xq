@@ -28,7 +28,9 @@ let $list :=
                            order by $cnt descending
                            (:where $cnt > 3 :)
                            return
-                             <Keyword value="{$k}">{$cnt}</Keyword>
+			     let $newk := fn:replace($k,"ã¼","ü")
+                             return
+                             <Keyword value="{$newk}">{$cnt}</Keyword>
                        return 
                          if (fn:exists ($keywords)) then
                          <record>

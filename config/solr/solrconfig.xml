@@ -24,122 +24,122 @@
   
 <requestHandler name="/dataimport0" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config0.xml</str>
+    <str name="config">/oraexport/MigrosSearchEngine/solr/KANGURUMProductsCoreFirst/conf/dataconfigs/data-config0.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport1" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config1.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config1.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport2" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config2.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config2.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport3" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config3.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config3.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport4" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config4.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config4.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport5" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config5.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config5.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport6" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config6.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config6.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport7" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config7.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config7.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport8" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config8.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config8.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport9" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config9.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config9.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport10" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config10.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config10.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport11" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config11.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config11.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport12" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config12.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config12.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport13" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config13.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config13.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport14" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config14.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config14.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport15" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config15.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config15.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport16" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config16.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config16.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport17" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config17.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config17.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport18" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config18.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config18.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport19" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config19.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config19.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport20" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config20.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config20.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport21" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config21.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config21.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport22" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config22.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config22.xml</str>
   </lst>
 </requestHandler>
 <requestHandler name="/dataimport23" class="org.apache.solr.handler.dataimport.DataImportHandler">
   <lst name="defaults">
-    <str name="config">/opt/migros/solr/ProductsCoreSecond/conf/dataconfigs/data-config23.xml</str>
+    <str name="config">/opt/migros/solr/ProductsCoreFirst/conf/dataconfigs/data-config23.xml</str>
   </lst>
 </requestHandler>
 
@@ -526,7 +526,7 @@
       -->
 
      <autoSoftCommit> 
-       <maxTime>1000</maxTime> 
+       <maxTime>5000</maxTime> 
      </autoSoftCommit>
 
     <!-- Update Related Event Listeners
@@ -1744,14 +1744,14 @@
 	    <str name="hl.simple.pre">&lt;b&gt;</str>
 	    <str name="hl.simple.post">&lt;/b&gt;</str>
 
-            <!-- <str name="hl.highlightMultiTerm">on</str> -->
+            <str name="hl.highlightMultiTerm">on</str>
 	    <str name="hl.fl">suggest_ngram</str>
-	    <str name="f.suggest_ngram.hl.fragsize">30</str>
+	    <str name="f.suggest_ngram.hl.fragsize">60</str>
 	    <str name="f.suggest_ngram.hl.snippets">3</str>
 	    <str name="f.suggest_ngram.hl.alternateField">suggest_ngram</str>
 
 	    <str name="hl.fl">suggest_ngram_tr</str>
-	    <str name="f.suggest_ngram_tr.hl.fragsize">30</str>
+	    <str name="f.suggest_ngram_tr.hl.fragsize">60</str>
 	    <str name="f.suggest_ngram_tr.hl.snippets">3</str>
 	    <str name="f.suggest_ngram_tr.hl.alternateField">suggest_ngram_tr</str>
 

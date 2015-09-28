@@ -44,13 +44,13 @@ import org.slf4j.LoggerFactory;
  */
 public final class TRMorphStemFilter extends TokenFilter {
 
-	static {
+	/*static {
 	    System.loadLibrary("fomahelpers");
-	}
+	}*/
 	
 	public static final Logger log = LoggerFactory.getLogger(TRMorphStemFilter.class);
 
-	public static final SWIGTYPE_p_fsm fsm = FomaWrapper.openFomaFile("/usr/local/lib/trmorph.fst");
+	//public static final SWIGTYPE_p_fsm fsm = FomaWrapper.openFomaFile("/usr/local/lib/trmorph.fst");
 
 	private final CharTermAttribute termAttribute = addAttribute(CharTermAttribute.class);
 	private final KeywordAttribute keywordAttribute = addAttribute(KeywordAttribute.class);
@@ -163,7 +163,8 @@ public final class TRMorphStemFilter extends TokenFilter {
 
 	static String stem(String word, String aggregation) throws IOException {
 
-		List<String> parses = parseLocal(word);
+		List<String> parses = parse(word);
+		//List<String> parses = parseLocal(word);
 
 		TreeSet<String> set = new TreeSet<>();
 
@@ -234,14 +235,15 @@ public final class TRMorphStemFilter extends TokenFilter {
 			}
 		}
 		long e = System.currentTimeMillis();
-		System.out.println("FROM SERVER: for " + word + ":" + modifiedSentence + " took " + (e - b) + " ms ");
+		//System.out.println("FROM SERVER: for " + word + ":" + modifiedSentence + " took " + (e - b) + " ms ");
 		return list;
 	}
 
 	private static List<String> parseLocal(String word)  {
 		long b = System.currentTimeMillis();
 
-		String stemWord = FomaWrapper.findStemWord(word,fsm);
+		String stemWord = "";
+		//String stemWord = FomaWrapper.findStemWord(word,fsm);
 		
 		List<String> list = new ArrayList<>();
 		if (!stemWord.trim().isEmpty()){
@@ -255,7 +257,7 @@ public final class TRMorphStemFilter extends TokenFilter {
 			}
 		}
 		long e = System.currentTimeMillis();
-		System.out.println("Stem Obtained " + word + ":" + stemWord + " took " + (e - b) + " ms ");
+		//System.out.println("Stem Obtained " + word + ":" + stemWord + " took " + (e - b) + " ms ");
 		return list;
 	}
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +15,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-
 <!--
    This is an example of a simple "solr.xml" file for configuring one or 
    more Solr Cores, as well as allowing Cores to be added, removed, and 
@@ -26,69 +25,58 @@
    http://wiki.apache.org/solr/CoreAdmin
 -->
 <solr persistent="false">
-
   <!--
   adminPath: RequestHandler path to manage cores.
     If 'null' (or absent), cores will not be manageable via request handler
   -->
-  <cores adminPath="/admin/cores"  hostContext="${hostContext:solr}">
-<!--
+  <cores adminPath="/admin/cores" hostContext="${hostContext:solr}">
+    <!--
   <cores adminPath="/admin/cores" host="${host:}" hostPort="${jetty.port:8983}" hostContext="${hostContext:solr}">
--->
-
-    <core name="Products" instanceDir="Products" >
-	<property name="solr.data.dir" value="/opt/migros/data/Products" />
-    </core>
-
- <core name="Mixed" instanceDir="Mixed" >
-	<property name="solr.data.dir" value="/opt/migros/data/Mixed" />
-    </core>
-
-<!--
-    <core name="Sales" instanceDir="Sales" >
-	<property name="solr.data.dir" value="/opt/migros/data/Sales" />
-    </core>
+   -->
     <core name="Campaigns" instanceDir="Campaigns" >
-	<property name="solr.data.dir" value="/opt/migros/data/Campaigns" />
+	<property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/Campaigns" />
     </core>
--->
-
-    <core name="collection1" instanceDir="collection1" >
-	<property name="solr.data.dir" value="/opt/migros/data/collection1" />
+    <core name="ProductsCoreFirst" instanceDir="ProductsCoreFirst">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/ProductsCoreFirst"/>
     </core>
-
-    <core name="ProductsTRMorphTest" instanceDir="ProductsTRMorphTest" >
-	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphTest" />
+    <core name="ProductsCoreSecond" instanceDir="ProductsCoreSecond">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/ProductsCoreSecond"/>
     </core>
-
-    <core name="ProductsTRMorphTestIst" instanceDir="ProductsTRMorphTestIst" >
-	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphTestIst" />
+    <core name="ClickstreamClick" instanceDir="ClickstreamClick">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/ClickstreamClick"/>
     </core>
-
-    <core name="ProductsTRMorphFullProduction" instanceDir="ProductsTRMorphFullProduction" >
-	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphFullProduction" />
+    <core name="ClickstreamCart" instanceDir="ClickstreamCart">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/ClickstreamCart"/>
     </core>
-    <core name="ProductsTRMorphFullProductionSuggest" instanceDir="ProductsTRMorphFullProductionSuggest" >
-	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphFullProductionSuggest" />
+    <core name="Synonyms" instanceDir="Synonyms">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/Synonyms" />
     </core>
-<!--
-    <core name="ProductsTRMorphProd" instanceDir="ProductsTRMorphProd" >
-	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorphProd" />
+    <core name="Users" instanceDir="Users">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/Users" />
     </core>
-
-
-    <core name="ProductsTRMorph.backup4" instanceDir="ProductsTRMorph.backup4" >
-	<property name="solr.data.dir" value="/opt/migros/data/ProductsTRMorph.backup4" />
+     <core name="UserLogs" instanceDir="UserLogs">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/UserLogs" />
     </core>
--->
-   
+    <core name="Config" instanceDir="Config">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/Config" />
+    </core>
+    <core name="CustomerSegments" instanceDir="CustomerSegments">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/CustomerSegments" />
+    </core>
+    <core name="KANGURUMProductsCoreFirst" instanceDir="KANGURUMProductsCoreFirst">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/KANGURUMProductsCoreFirst"/>
+    </core>
+    <core name="KANGURUMProductsCoreSecond" instanceDir="KANGURUMProductsCoreSecond">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/KANGURUMProductsCoreSecond"/>
+    </core>
+    <core name="MACROCENTERProductsCoreFirst" instanceDir="MACROCENTERProductsCoreFirst">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/MACROCENTERProductsCoreFirst"/>
+    </core>
+    <core name="MACROCENTERProductsCoreSecond" instanceDir="MACROCENTERProductsCoreSecond">
+      <property name="solr.data.dir" value="/oraexport/MigrosSearchEngine/data/MACROCENTERProductsCoreSecond"/>
+    </core>
     <shardHandlerFactory name="shardHandlerFactory" class="HttpShardHandlerFactory">
       <str name="urlScheme">${urlScheme:}</str>
     </shardHandlerFactory>
-    <core name="solrpedia" instanceDir="solrpedia" >
-	<property name="solr.data.dir" value="/opt/migros/data/solrpedia" />
-    </core>
   </cores>
-
 </solr>
-

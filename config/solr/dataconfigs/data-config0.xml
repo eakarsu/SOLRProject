@@ -1,7 +1,7 @@
 <dataConfig>
   <dataSource type="FileDataSource" encoding="UTF-8"/>
   <document>
-    <entity name="Products0" processor="XPathEntityProcessor" stream="true" forEach="/add/doc/" url="/oraexport/searchEngineOps/solrinputfiles/batches/solrinput0.xml" transformer="RegexTransformer,DateFormatTransformer">
+    <entity name="Products0" processor="XPathEntityProcessor" stream="true" forEach="/add/doc/" url="/oraexport/MigrosSearchEngine2/searchEngineOps/solrinputfiles/KANGURUM/KANGURUMAccumulatedProducts.xml" transformer="RegexTransformer,DateFormatTransformer">
       <field column="UnitSymbol_ADET" xpath="/add/doc/field[@name='UnitSymbol_ADET']"/>
       <field column="UnitVal_ADET" xpath="/add/doc/field[@name='UnitVal_ADET']"/>
       <field column="UnitExpr_ADET" xpath="/add/doc/field[@name='UnitExpr_ADET']"/>
