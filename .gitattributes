@@ -1,0 +1,2 @@
+# Preserve the archived Java sources' original CRLF records without treating CR as whitespace damage.
+*.java -text whitespace=cr-at-eol

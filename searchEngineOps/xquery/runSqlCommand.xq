@@ -1,6 +1,9 @@
       declare variable $sqlfile as xs:string external;
       declare variable $outputfile as xs:string external;
       declare variable $month as xs:integer external;
+      declare variable $jdbc-url as xs:string external;
+      declare variable $jdbc-user as xs:string external;
+      declare variable $jdbc-password as xs:string external;
 
       let $lines := file:read-text-lines ($sqlfile)
       let $lines :=
@@ -23,11 +26,7 @@
 
        let $outputfile := fn:replace($outputfile,".sql",fn:concat($month,".sql"))
        let $addBegin := file:write-text($outputfile,"<RECORDS>","UTF-8")
-       let $url := "jdbc:oracle:thin:kangurum/ferhatpasa1@212.12.132.196:1521/kngdb"   
-
-       (: let $url := "jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST"   :)
-
-       let $conn  := sql:connect($url)
+       let $conn  := sql:connect($jdbc-url, $jdbc-user, $jdbc-password)
        let $list :=
          for tumbling window $w in sql:execute ($conn,$sqlStmt)
             start at $x when fn:true()

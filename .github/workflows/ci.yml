@@ -1,0 +1,33 @@
+name: control-plane-ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Compile supported source
+        run: make build
+      - name: Run control-plane tests
+        run: make test
+      - name: Audit secrets and destructive shims
+        run: make audit
+      - name: Verify explicit migration and backup
+        run: |
+          export DISCOVERY_DATABASE="$RUNNER_TEMP/discovery.db"
+          python -m discovery init-db
+          python -m discovery backup "$RUNNER_TEMP/backup.db"
+          python -m discovery restore-verify "$RUNNER_TEMP/backup.db"
+

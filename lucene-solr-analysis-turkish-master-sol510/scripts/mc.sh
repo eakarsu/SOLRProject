@@ -1,8 +1,12 @@
 #!/bin/sh
+set -eu
 
-rm -rf out_*.txt
-rm -rf gdeval_*.txt
-rm -rf risk_sensitive_*.txt
+OUTPUT_DIR=${1:?"usage: mc.sh NEW_OUTPUT_DIRECTORY"}
+if [ -e "$OUTPUT_DIR" ]; then
+  echo "output directory already exists: $OUTPUT_DIR" >&2
+  exit 64
+fi
+mkdir -m 700 -- "$OUTPUT_DIR"
 
 FILES=*submitted.txt
 
@@ -10,7 +14,7 @@ for f in $FILES;
 do  
 	if  ! [[ $f == out_* ]] || [[ $f == gdeval_* ]] || [[ $f == risk_sensitive_gdeval_* ]];
 	then
-	./trec_eval -q -c -M1000 qrelsMC.txt $f > "out_${f##/*/}"
+	./trec_eval -q -c -M1000 qrelsMC.txt "$f" > "$OUTPUT_DIR/out_${f##/*/}"
 	fi
 done
 
@@ -22,7 +26,7 @@ for f in $FILES;
 do  
 	if  ! [[ $f == out_* ]] || [[ $f == gdeval_* ]] || [[ $f == risk_sensitive_gdeval_* ]];
 	then
-    	./gdeval.pl -c qrelsMC.txt $f > "gdeval_${f##/*/}"
+	./gdeval.pl -c qrelsMC.txt "$f" > "$OUTPUT_DIR/gdeval_${f##/*/}"
 	fi
 done
 
@@ -39,11 +43,9 @@ do
 			TESTRUN=$(printf "%s_%s_%s_submitted.txt" "$APP" "$STEMMER" "$QUERYLENGTH");
 			
 			RESULT=$(printf "risk_sensitive_%s_%s" "$ALPHA" "$TESTRUN");
-			./gdeval.pl -riskAlpha $ALPHA -baseline $BASELINE qrelsMC.txt $TESTRUN > $RESULT;
+			./gdeval.pl -riskAlpha "$ALPHA" -baseline "$BASELINE" qrelsMC.txt "$TESTRUN" > "$OUTPUT_DIR/$RESULT";
 			echo "gdeval.pl -riskAlpha $ALPHA -baseline $BASELINE qrelsMC.txt $TESTRUN > $RESULT"; 			
 		done
 	done
 done
 done
-
-

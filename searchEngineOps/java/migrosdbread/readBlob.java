@@ -256,7 +256,6 @@ public class readBlob {
 			e2.printStackTrace();
 		}
 
-		//sqlplus64 kangurum/planetuc9@195.87.90.150:1522/KANGTEST
 		try {
 			Class.forName("oracle.jdbc.driver.OracleDriver");
 			Connection conn = null;

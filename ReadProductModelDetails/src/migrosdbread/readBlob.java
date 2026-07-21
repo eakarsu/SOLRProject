@@ -255,13 +255,13 @@ public class readBlob {
 			e2.printStackTrace();
 		}
 
-		//sqlplus64 kangurum/planetuc9@195.87.90.150:1522/KANGTEST
+		//sqlplus64 REDACTED_ROTATE_HISTORICAL_CREDENTIALS
 		try {
 			Class.forName("oracle.jdbc.driver.OracleDriver");
 			//Connection conn = DriverManager
-			//		.getConnection("jdbc:oracle:thin:kangurum/planetuc9@212.12.132.196:1521/kngdb");
+			//		.getConnection("jdbc:oracle:thin:REDACTED_ROTATE_HISTORICAL_CREDENTIALS");
 			Connection conn = DriverManager
-					.getConnection("jdbc:oracle:thin:kangurum/planetuc9@195.87.90.150:1522/KANGTEST");
+					.getConnection("jdbc:oracle:thin:REDACTED_ROTATE_HISTORICAL_CREDENTIALS");
 			String s = "select PRODUCT_MODEL_ID, HTML_CONTENT  from PRODUCT_MODEL_DETAIL where rownum <  "+count;
 			//String s = "select PRODUCT_MODEL_ID, HTML_CONTENT  from PRODUCT_MODEL_DETAIL  ";
 			PreparedStatement psGetBlob = conn.prepareStatement(s);

@@ -1,0 +1,7 @@
+{"id":"tr-apple","query":"kırmızı elma","language":"tr","expected_ids":["catalog:apple-red"]}
+{"id":"tr-deascii","query":"kirmizi elma","language":"tr-Latn-ASCII","expected_ids":["catalog:apple-red"]}
+{"id":"en-apple","query":"red apple","language":"en","expected_ids":["catalog:apple-red"]}
+{"id":"empty","query":"","kind":"empty","expect_empty":true}
+{"id":"adversarial-match-all","query":"*:*","kind":"adversarial","expect_empty":true}
+{"id":"adversarial-deep","query":"((((((((((((((((((((((((((((((","kind":"adversarial","expect_empty":true}
+
