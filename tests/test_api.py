@@ -47,6 +47,11 @@ class ApiTest(unittest.TestCase):
         thread.start()
         base = f"http://127.0.0.1:{server.server_port}"
         try:
+            with urllib.request.urlopen(base + "/") as response:
+                page = response.read().decode("utf-8")
+                self.assertIn("Auto Fill Demo Credentials", page)
+                self.assertIn("Sign In", page)
+                self.assertIn("Authenticated Search Operations Dashboard", page)
             with urllib.request.urlopen(base + "/health/live") as response:
                 self.assertEqual(json.load(response)["status"], "live")
             with urllib.request.urlopen(base + "/health/ready") as response:

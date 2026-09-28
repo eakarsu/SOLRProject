@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -43,6 +44,21 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _html(self, body: str) -> None:
+        payload = body.encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Security-Policy", "default-src 'none'; connect-src http://127.0.0.1:*; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors 'none'")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def _workspace(self) -> str:
+        api_origin = json.dumps(f"http://127.0.0.1:{int(os.getenv('BACKEND_PORT', '4000'))}")
+        return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Search Discovery Operations</title><style>body{{font:16px system-ui;max-width:48rem;margin:4rem auto;padding:0 1rem;color:#172033}}section{{border:1px solid #d9dfeb;border-radius:14px;padding:1.4rem;box-shadow:0 12px 36px #17203314}}label,input,button{{display:block;width:100%;margin:.65rem 0}}input,button{{padding:.75rem;box-sizing:border-box;border:1px solid #aeb8ca;border-radius:8px}}button{{cursor:pointer;font-weight:700;background:#fff}}button[type=submit]{{background:#155eef;border-color:#155eef;color:#fff}}.status{{min-height:1.5rem;color:#a32121}}.dashboard{{display:none}}.dashboard[aria-hidden=false]{{display:block}}.identity{{padding:1rem;background:#f4f7fb;border-radius:10px}}</style></head><body><h1>Search Discovery Operations</h1><p>Operate governed ingestion, relevance, index generation, feedback, and search-quality controls.</p><section id="login-panel"><form id="login"><label>Email<input id="email" type="email" autocomplete="username" required></label><label>Password<input id="password" type="password" autocomplete="current-password" required></label><button id="fill-demo" type="button">Auto Fill Demo Credentials</button><button type="submit">Sign In</button><p id="status" class="status" aria-live="polite"></p></form></section><section id="dashboard" class="dashboard" aria-hidden="true"><h2>Authenticated Search Operations Dashboard</h2><p id="identity" class="identity"></p><p>Your runtime session is active. Search ingestion, relevance, and generation controls remain governed by the application APIs.</p></section><script>const apiOrigin={api_origin};let token='';const email=document.getElementById('email');const password=document.getElementById('password');const status=document.getElementById('status');document.getElementById('fill-demo').addEventListener('click',async()=>{{status.textContent='';const response=await fetch(apiOrigin+'/api/auth/demo-credentials');if(!response.ok){{status.textContent='Demo credentials are unavailable.';return}}const credentials=await response.json();email.value=credentials.email;password.value=credentials.password;email.focus();status.textContent='Demo credentials filled. Select Sign In to continue.';}});document.getElementById('login').addEventListener('submit',async(event)=>{{event.preventDefault();status.textContent='Signing in…';const response=await fetch(apiOrigin+'/api/auth/login',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{email:email.value,password:password.value}})}});const body=await response.json();if(!response.ok){{status.textContent='Sign in failed.';return}}token=body.token;const me=await fetch(apiOrigin+'/api/auth/me',{{headers:{{Authorization:'Bearer '+token}}}});if(!me.ok){{status.textContent='Session verification failed.';return}}const identity=await me.json();password.value='';document.getElementById('identity').textContent='Signed in as '+identity.user.email+' ('+identity.user.role+').';document.getElementById('login-panel').hidden=true;document.getElementById('dashboard').setAttribute('aria-hidden','false');history.replaceState(null,'','/dashboard');}});</script></body></html>'''
+
     def _json(self) -> dict[str, Any]:
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -68,6 +84,9 @@ class Handler(BaseHTTPRequestHandler):
         return principal
 
     def do_GET(self) -> None:  # noqa: N802
+        if self.path in ("/", "/dashboard"):
+            self._html(self._workspace())
+            return
         if self.path == "/health/live":
             self._send(HTTPStatus.OK, {"status": "live"})
             return
