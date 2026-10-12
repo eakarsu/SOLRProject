@@ -12,6 +12,8 @@ export RUNTIME_PROJECT_NAME=SOLRProject RUNTIME_AI_ENDPOINT=/api/ai/discovery-as
 export RUNTIME_AI_SYSTEM_PROMPT='You are a search discovery operations assistant. Recommend safe query, indexing, and relevance steps while distinguishing evidence from assumptions.'
 export DISCOVERY_HOST=127.0.0.1 DISCOVERY_PORT="$FRONTEND_PORT" DISCOVERY_DATABASE="${DISCOVERY_DATABASE:-$PROJECT_DIR/var/runtime-discovery.db}"
 mkdir -p "$PROJECT_DIR/var"
+echo "AI workspace: http://127.0.0.1:$BACKEND_PORT/ai-workspace"
+export VITE_NATIVE_AI_WORKSPACE_URL="http://127.0.0.1:$BACKEND_PORT/ai-workspace" REACT_APP_NATIVE_AI_WORKSPACE_URL="http://127.0.0.1:$BACKEND_PORT/ai-workspace"
 node "$PROJECT_DIR/runtime/setup.mjs"
 (cd "$PROJECT_DIR"&&python3 -m discovery init-db)
 CHILD_PIDS=()
