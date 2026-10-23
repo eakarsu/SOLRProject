@@ -7,8 +7,12 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
+from urllib.parse import parse_qs, urlparse
+
 from .config import Settings
 from .ingestion import IngestionService
+from .wave3 import FEATURES as WAVE3_FEATURES
+from .wave3 import TaskStore, filter_documents, provider_summary, to_csv
 from .query import QueryService
 from .solr import SolrClient, SolrError
 from .store import Store
@@ -74,6 +78,28 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("JSON body must be an object")
         return value
 
+    def _any_principal(self) -> dict[str, Any]:
+        authorization = self.headers.get("Authorization", "")
+        if not authorization.startswith("Bearer "):
+            raise PermissionError("Bearer [REDACTED] required")
+        principal = self.server.store.authenticate(authorization[7:])
+        if principal is None:
+            raise PermissionError("valid token required")
+        return principal
+
+    def _tasks(self) -> TaskStore:
+        if not hasattr(self.server, "wave3_tasks"):
+            self.server.wave3_tasks = TaskStore(self.server.settings.database)
+        return self.server.wave3_tasks
+
+    def _documents(self) -> list[dict[str, Any]]:
+        with self.server.store.connect() as db:
+            rows = db.execute(
+                "SELECT source_id, external_id, source_version, deleted, indexed_generation, updated_at "
+                "FROM documents ORDER BY updated_at DESC LIMIT 200"
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def _principal(self, role: str) -> dict[str, Any]:
         authorization = self.headers.get("Authorization", "")
         if not authorization.startswith("Bearer "):
@@ -84,8 +110,46 @@ class Handler(BaseHTTPRequestHandler):
         return principal
 
     def do_GET(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
+        if parsed.path == "/v1/tasks":
+            try:
+                principal = self._any_principal()
+                tasks = self._tasks().list(principal["id"], query.get("q", [""])[0], query.get("status", [""])[0])
+                self._send(HTTPStatus.OK, {"tasks": tasks})
+            except PermissionError as exc:
+                self._send(HTTPStatus.UNAUTHORIZED, {"error": str(exc)})
+            return
+        if parsed.path == "/v1/documents":
+            try:
+                self._any_principal()
+                docs = filter_documents(self._documents(), query.get("q", [""])[0], query.get("source_id", [""])[0])
+                self._send(HTTPStatus.OK, {"documents": docs})
+            except PermissionError as exc:
+                self._send(HTTPStatus.UNAUTHORIZED, {"error": str(exc)})
+            return
+        if parsed.path == "/v1/documents/export":
+            try:
+                self._any_principal()
+                docs = filter_documents(self._documents(), query.get("q", [""])[0], query.get("source_id", [""])[0])
+                if query.get("format", ["json"])[0] == "csv":
+                    body = to_csv(docs, ["source_id", "external_id", "source_version", "deleted", "indexed_generation", "updated_at"]).encode()
+                    self.send_response(HTTPStatus.OK)
+                    self.send_header("Content-Type", "text/csv; charset=utf-8")
+                    self.send_header("Content-Disposition", 'attachment; filename="documents.csv"')
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    self._send(HTTPStatus.OK, {"documents": docs})
+            except PermissionError as exc:
+                self._send(HTTPStatus.UNAUTHORIZED, {"error": str(exc)})
+            return
         if self.path in ("/", "/dashboard"):
             self._html(self._workspace())
+            return
+        if self.path == "/api/health":
+            self._send(HTTPStatus.OK, {"status": "ok"})
             return
         if self.path == "/health/live":
             self._send(HTTPStatus.OK, {"status": "live"})
@@ -114,10 +178,40 @@ class Handler(BaseHTTPRequestHandler):
             return
         self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
+    def do_PUT(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        if parsed.path.startswith("/v1/tasks/"):
+            try:
+                principal = self._any_principal()
+                body = self._json()
+                task = self._tasks().update(principal["id"], int(parsed.path.rsplit("/", 1)[1]), body)
+                if task is None:
+                    self._send(HTTPStatus.NOT_FOUND, {"error": "task not found"})
+                else:
+                    self._send(HTTPStatus.OK, {"task": task})
+            except PermissionError as exc:
+                self._send(HTTPStatus.UNAUTHORIZED, {"error": str(exc)})
+            except (ValueError, TypeError) as exc:
+                self._send(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+            return
+        self._send(HTTPStatus.NOT_FOUND, {"error": "not found"})
+
     def do_POST(self) -> None:  # noqa: N802
         try:
             body = self._json()
-            if self.path == "/v1/query":
+            parsed_path = urlparse(self.path).path
+            if parsed_path == "/v1/tasks":
+                principal = self._any_principal()
+                task = self._tasks().create(principal["id"], body.get("title", ""), body.get("status", "open"), body.get("priority", "medium"), body.get("notes"))
+                self._send(HTTPStatus.CREATED, {"task": task})
+            elif parsed_path.startswith("/v1/ai/"):
+                self._any_principal()
+                feature = parsed_path.rsplit("/", 1)[1]
+                if feature not in WAVE3_FEATURES:
+                    self._send(HTTPStatus.NOT_FOUND, {"error": "unknown AI feature"})
+                else:
+                    self._send(HTTPStatus.OK, provider_summary(feature, self._documents()))
+            elif self.path == "/v1/query":
                 principal = self._principal("query")
                 result = self.server.query.search(principal, body.get("query", ""),
                                                   body.get("limit", 20),

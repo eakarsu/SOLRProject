@@ -22,11 +22,6 @@ const server=http.createServer(async(req,res)=>{
   try{
     if(req.method==='GET'&&url.pathname==='/ai-workspace')return serveNativePromptConsole(res);
     if(req.method==='GET'&&url.pathname==='/api/health')return json(res,200,{status:'ok',project});
-    if(req.method==='GET'&&url.pathname==='/api/auth/demo-credentials'){
-      if(process.env.NODE_ENV==='production')return json(res,404,{error:'Not found'});
-      const email=process.env.DEMO_EMAIL||process.env.PROVISION_ADMIN_EMAIL||process.env.ADMIN_EMAIL;const password=process.env.DEMO_PASSWORD||process.env.PROVISION_ADMIN_PASSWORD||process.env.ADMIN_PASSWORD;
-      return email&&password?json(res,200,{email,password}):json(res,503,{error:'Demo credentials are not configured'});
-    }
     if(req.method==='POST'&&url.pathname==='/api/auth/login'){
       const body=await readBody(req);const email=String(body.email||'').trim().toLowerCase();const password=String(body.password||'');
       const row=query(`SELECT id,email,password_hash,display_name,role FROM runtime_app_users WHERE email=${literal(email)} AND active=TRUE LIMIT 1`,{rows:true});

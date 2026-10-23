@@ -14,6 +14,8 @@ from .ingestion import IngestionService
 from .query import QueryService
 from .solr import SolrClient
 from .store import SCHEMA_VERSION, Store
+from .wave3 import FEATURES as AI_FEATURES
+from .wave3 import TaskStore, filter_documents, provider_summary, to_csv
 from .worker import IndexWorker
 
 
@@ -50,6 +52,22 @@ def parser() -> argparse.ArgumentParser:
     purge.add_argument("name")
     purge.add_argument("--confirm-collection", required=True)
     purge.add_argument("--actor", required=True)
+    tasks = commands.add_parser("tasks", help="list wave3 tasks for a principal token")
+    tasks.add_argument("--token", required=True)
+    tasks.add_argument("--q", default="")
+    tasks.add_argument("--status", default="")
+    task_create = commands.add_parser("task-create", help="create a wave3 task")
+    task_create.add_argument("--token", required=True)
+    task_create.add_argument("title")
+    task_create.add_argument("--priority", default="medium")
+    export = commands.add_parser("export-documents", help="export document registry")
+    export.add_argument("--token", required=True)
+    export.add_argument("--q", default="")
+    export.add_argument("--source-id", default="")
+    export.add_argument("--format", choices=["json", "csv"], default="json")
+    ai = commands.add_parser("ai-summary", help="AI summary (provider only when key configured)")
+    ai.add_argument("--token", required=True)
+    ai.add_argument("feature", choices=AI_FEATURES)
     benchmark = commands.add_parser("benchmark")
     benchmark.add_argument("dataset", type=Path)
     benchmark.add_argument("--token", required=True)
@@ -110,6 +128,31 @@ def main(argv: list[str] | None = None) -> int:
                 generations.activate(args.name, args.actor)
             else:
                 generations.purge(args.name, args.confirm_collection, args.actor)
+        elif args.command in ("tasks", "task-create"):
+            principal = store.authenticate(args.token)
+            if principal is None:
+                raise PermissionError("invalid token")
+            task_store = TaskStore(settings.database)
+            if args.command == "tasks":
+                print(json.dumps({"tasks": task_store.list(principal["id"], args.q, args.status)}, sort_keys=True))
+            else:
+                print(json.dumps(task_store.create(principal["id"], args.title, priority=args.priority), sort_keys=True))
+        elif args.command in ("export-documents", "ai-summary"):
+            principal = store.authenticate(args.token)
+            if principal is None:
+                raise PermissionError("invalid token")
+            with store.connect() as db:
+                docs = [dict(r) for r in db.execute(
+                    "SELECT source_id, external_id, source_version, deleted, indexed_generation, updated_at "
+                    "FROM documents ORDER BY updated_at DESC LIMIT 200").fetchall()]
+            if args.command == "export-documents":
+                docs = filter_documents(docs, args.q, args.source_id)
+                if args.format == "csv":
+                    print(to_csv(docs, ["source_id", "external_id", "source_version", "deleted", "indexed_generation", "updated_at"]), end="")
+                else:
+                    print(json.dumps({"documents": docs}, ensure_ascii=False, sort_keys=True))
+            else:
+                print(json.dumps(provider_summary(args.feature, docs), ensure_ascii=False, sort_keys=True))
         elif args.command == "benchmark":
             principal = store.authenticate(args.token)
             if principal is None:
